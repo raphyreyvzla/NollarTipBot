@@ -21,9 +21,6 @@ config.read('/root/webhooks/webhookconfig.ini')
 # Constants
 WALLET = config.get('webhooks', 'wallet')
 NODE_IP = config.get('webhooks', 'node_ip')
-WORK_SERVER = config.get('webhooks', 'work_server')
-WORK_KEY = config.get('webhooks', 'work_key')
-RE_EMOJI = re.compile('[\U00010000-\U0010ffff\U000026A1]', flags=re.UNICODE)
 
 # Connect to Nano node
 rpc = nano.rpc.Client(NODE_IP)
@@ -93,11 +90,7 @@ def get_pow(sender_account):
     logging.info("{}: hash: {}".format(datetime.now(), frontier_hash))
     while work == '':
         try:
-            work_data = {'hash': frontier_hash, 'key': WORK_KEY}
-            json_request = json.dumps(work_data)
-            r = requests.post('{}'.format(WORK_SERVER), data=json_request)
-            rx = r.json()
-            work = rx['work']
+            work = rpc.work_generate(frontier_hash)
             logging.info("{}: Work generated: {}".format(datetime.now(), work))
         except Exception as e:
             logging.info("{}: ERROR GENERATING WORK: {}".format(
@@ -115,7 +108,7 @@ def send_tip(message, users_to_tip, tip_index):
         datetime.now(), users_to_tip[tip_index]['receiver_screen_name']))
     if str(users_to_tip[tip_index]['receiver_id']) == str(
             message['sender_id']):
-        self_tip_text = "Self tipping is not allowed.  Please use this bot to spread the $NANO to other Twitter users!"
+        self_tip_text = "Self tipping is not allowed.  Please use this bot to spread the $NANO to other users!"
         send_reply(message, self_tip_text)
 
         logging.info("{}: User tried to tip themself").format(datetime.now())
@@ -197,9 +190,9 @@ def send_tip(message, users_to_tip, tip_index):
 
         # Send a DM to the receiver
         receiver_tip_text = (
-            "@{} just sent you a {} NANO tip! Reply to this DM with !balance to see your new balance.  If you have not "
+            "@{} just sent you a {} NOS tip! Reply to this DM with !balance to see your new balance.  If you have not "
             "registered an account, send a reply with !register to get started, or !help to see a list of "
-            "commands!  Learn more about NANO at https://nano.org/".format(
+            "commands!  Learn more about NOS at https://nos.cash/".format(
                 message['sender_screen_name'], message['tip_amount_text'],
                 users_to_tip[tip_index]['balance']))
         send_dm(users_to_tip[tip_index]['receiver_id'], receiver_tip_text)
@@ -212,24 +205,3 @@ def send_tip(message, users_to_tip, tip_index):
     logging.info("{}: tip sent to {} via hash {}".format(
         datetime.now(), users_to_tip[tip_index]['receiver_screen_name'],
         message['send_hash']))
-
-
-def get_energy(nano_energy):
-    """
-    Calculate the total energy used by Nano at time of loading the webpage.
-    """
-    block_count_get = rpc.block_count()
-    checked_blocks = block_count_get['count']
-
-    total_energy = checked_blocks * nano_energy
-
-    return total_energy, checked_blocks
-
-
-def strip_emoji(text):
-    """
-    Remove Emojis from tweet text to prevent issues with logging
-    """
-    logging.info('{}: removing emojis'.format(datetime.now()))
-    text = str(text)
-    return RE_EMOJI.sub(r'', text)

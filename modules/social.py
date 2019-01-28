@@ -30,13 +30,12 @@ MIN_TIP = config.get('webhooks', 'min_tip')
 NODE_IP = config.get('webhooks', 'node_ip')
 
 # IDs
-BOT_ID_TWITTER = config.get('webhooks', 'bot_id_twitter')
 BOT_ID_TELEGRAM = config.get('webhooks', 'bot_id_telegram')
 
 # Connect to Telegram
 telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 
-# Connect to Nano node
+# Connect to node
 rpc = nano.rpc.Client(NODE_IP)
 
 
@@ -51,40 +50,6 @@ def send_dm(receiver, message):
         logging.info("{}: Send DM - Telegram ERROR: {}".format(
             datetime.now(), e))
         pass
-
-
-def set_message_info(status, message):
-    """
-    Set the tweet information into the message dictionary
-    """
-    logging.info("{}: in set_message_info".format(datetime.now()))
-    if status.get('retweeted_status'):
-        logging.info("{}: Retweets are ignored.".format(datetime.now()))
-        message['id'] = None
-    else:
-        message['id'] = status.get('id')
-        message['sender_id_str'] = status.get('user', {}).get('id_str')
-        message['sender_id'] = Decimal(message['sender_id_str'])
-
-        if Decimal(message['sender_id']) == Decimal(BOT_ID_TWITTER):
-            logging.info('Messages from the bot are ignored.')
-            message['id'] = None
-            return message
-
-        message['sender_screen_name'] = status.get('user',
-                                                   {}).get('screen_name')
-
-        if status.get('truncated') is False:
-            dm_text = status.get('text')
-        else:
-            dm_text = status.get('extended_tweet', {}).get('full_text')
-
-        dm_text = dm_text.replace('\n', ' ')
-        dm_text = dm_text.lower()
-
-        message['text'] = dm_text.split(" ")
-
-    return message
 
 
 def check_message_action(message):
@@ -124,12 +89,12 @@ def validate_tip_amount(message):
 
     if Decimal(message['tip_amount']) < Decimal(MIN_TIP):
         min_tip_text = (
-            "The minimum tip amount is {} NANO.  Please update your tip amount and try again."
+            "The minimum tip amount is {} Nos.  Please update your tip amount and try again."
             .format(MIN_TIP))
         send_reply(message, min_tip_text)
 
         message['tip_amount'] = -1
-        logging.info("{}: User tipped less than {} NANO.".format(
+        logging.info("{}: User tipped less than {} Nos.".format(
             datetime.now(), MIN_TIP))
         return message
 
@@ -160,44 +125,42 @@ def set_tip_list(message, users_to_tip):
     """
     logging.info("{}: in set_tip_list.".format(datetime.now()))
 
-    if message['system'] == 'telegram':
-        logging.info("trying to set tiplist in telegram: {}".format(message))
-        for t_index in range(message['starting_point'] + 1,
-                             len(message['text'])):
-            if len(message['text'][t_index]) > 0:
-                if str(message['text'][t_index][0]) == "@" and str(
-                        message['text'][t_index]).lower() != (
-                            "@" + str(message['sender_screen_name']).lower()):
-                    check_user_call = (
-                        "SELECT member_id, member_name FROM telegram_chat_members "
-                        "WHERE chat_id = {} and member_name = '{}'".format(
-                            message['chat_id'], message['text'][t_index][1:]))
+    logging.info("trying to set tiplist in telegram: {}".format(message))
+    for t_index in range(message['starting_point'] + 1, len(message['text'])):
+        if len(message['text'][t_index]) > 0:
+            if str(message['text'][t_index][0]) == "@" and str(
+                    message['text'][t_index]).lower() != (
+                        "@" + str(message['sender_screen_name']).lower()):
+                check_user_call = (
+                    "SELECT member_id, member_name FROM telegram_chat_members "
+                    "WHERE chat_id = {} and member_name = '{}'".format(
+                        message['chat_id'], message['text'][t_index][1:]))
 
-                    user_check_data = get_db_data(check_user_call)
-                    if user_check_data:
-                        receiver_id = user_check_data[0][0]
-                        receiver_screen_name = user_check_data[0][1]
+                user_check_data = get_db_data(check_user_call)
+                if user_check_data:
+                    receiver_id = user_check_data[0][0]
+                    receiver_screen_name = user_check_data[0][1]
 
-                        user_dict = {
-                            'receiver_id': receiver_id,
-                            'receiver_screen_name': receiver_screen_name,
-                            'receiver_account': None,
-                            'receiver_register': None
-                        }
-                        users_to_tip.append(user_dict)
-                    else:
-                        logging.info(
-                            "User not found in DB: chat ID:{} - member name:{}"
-                            .format(message['chat_id'],
-                                    message['text'][t_index][1:]))
-                        missing_user_message = (
-                            "{} not found in our records.  In order to tip them, they need to be a "
-                            "member of the channel.  If they are in the channel, please have them "
-                            "send a message in the chat so I can add them.".
-                            format(message['text'][t_index]))
-                        send_reply(message, missing_user_message)
-                        users_to_tip.clear()
-                        return message, users_to_tip
+                    user_dict = {
+                        'receiver_id': receiver_id,
+                        'receiver_screen_name': receiver_screen_name,
+                        'receiver_account': None,
+                        'receiver_register': None
+                    }
+                    users_to_tip.append(user_dict)
+                else:
+                    logging.info(
+                        "User not found in DB: chat ID:{} - member name:{}".
+                        format(message['chat_id'],
+                               message['text'][t_index][1:]))
+                    missing_user_message = (
+                        "{} not found in our records.  In order to tip them, they need to be a "
+                        "member of the channel.  If they are in the channel, please have them "
+                        "send a message in the chat so I can add them.".format(
+                            message['text'][t_index]))
+                    send_reply(message, missing_user_message)
+                    users_to_tip.clear()
+                    return message, users_to_tip
 
     logging.info("{}: Users_to_tip: {}".format(datetime.now(), users_to_tip))
     message['total_tip_amount'] = message['tip_amount']
@@ -254,7 +217,7 @@ def validate_total_tip_amount(message):
     if message['sender_balance_raw']['balance'] < (
             message['total_tip_amount'] * 1000000000000000000000000000000):
         not_enough_text = (
-            "You do not have enough NANO to cover this {} NANO tip.  Please check your balance by "
+            "You do not have enough Nos to cover this {} Nos tip.  Please check your balance by "
             "sending a DM to me with !balance and retry.".format(
                 message['total_tip_amount']))
         send_reply(message, not_enough_text)
@@ -269,9 +232,7 @@ def validate_total_tip_amount(message):
 
 
 def send_reply(message, text):
-
-    if message['system'] == 'telegram':
-        telegram_bot.sendMessage(chat_id=message['chat_id'], text=text)
+    telegram_bot.sendMessage(chat_id=message['chat_id'], text=text)
 
 
 def check_telegram_member(chat_id, chat_name, member_id, member_name):
@@ -292,22 +253,6 @@ def check_telegram_member(chat_id, chat_name, member_id, member_name):
         set_db_data(new_chat_member_call)
 
     return
-
-
-def get_qr_code(sender_id, sender_account, sm_system):
-    """
-    Check to see if a QR code has been generated for the sender_id / system combination.  If not, generate one.
-    """
-    qr_exists = os.path.isfile('/root/webhooks/qr/{}-{}.png'.format(
-        sender_id, sm_system))
-
-    if not qr_exists:
-        print("No QR exists, generating a QR for account {}".format(
-            sender_account))
-        account_qr = pyqrcode.create('{}'.format(sender_account))
-        account_qr.png(
-            '/root/webhooks/qr/{}-{}.png'.format(sender_id, sm_system),
-            scale=4)
 
 
 def send_account_message(account_text, message, account):
