@@ -1,194 +1,60 @@
+import os
 from http import HTTPStatus
+import click
 
 from flask import Flask, render_template, request
 
 from modules.orchestration import *
 from modules.social import *
+from modules.db import *
 
 # Set Log File
 logging.basicConfig(
     handlers=[
-        logging.FileHandler('/root/webhooks/webhooks.log', 'a', 'utf-8')
+        logging.FileHandler(os.environ['MY_LOG_DIR'] + '/webhooks.log', 'a')
     ],
     level=logging.INFO)
 
 # Read config and parse constants
 config = configparser.ConfigParser()
-config.read('/root/webhooks/webhookconfig.ini')
+config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')
 
 # Telegram API
 TELEGRAM_KEY = config.get('webhooks', 'telegram_key')
 
 # IDs
 BOT_ID_TELEGRAM = config.get('webhooks', 'bot_id_telegram')
+SERVER_URL = config.get('webhooks', 'server_url')
 
 # Set up Flask routing
-app = Flask(__name__, template_folder='/var/www/html')
+app = Flask(__name__)
+
+
+# Creating databases
+@app.cli.command('db_init')
+def db_init():
+    delete_db()
+    create_db()
+    create_tables()
+    print('Succesfully initiated database.')
+
 
 # Connect to Telegram
 telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 
+
 # Flask routing
-
-
-@app.route('/tutorial')
-@app.route('/tutorial.html')
-def tutorial():
-    return render_template('tutorial.html')
-
-
-@app.route('/about')
-@app.route('/about.html')
-def about():
-    btc_energy = 887000
-    nano_energy = 0.112
-    total_energy, checked_blocks = get_energy(nano_energy)
-
-    btc_vs_nano = round((total_energy / btc_energy), 3)
-
-    total_energy_formatted = '{:,}'.format(total_energy)
-    btc_energy_formatted = '{:,}'.format(btc_energy)
-    checked_blocks_formatted = '{:,}'.format(checked_blocks)
-
-    return render_template(
-        'about.html',
-        btc_energy=btc_energy_formatted,
-        nano_energy=nano_energy,
-        btc_vs_nano=btc_vs_nano,
-        total_energy=total_energy_formatted,
-        checked_blocks=checked_blocks_formatted)
-
-
-@app.route('/contact')
-@app.route('/contact.html')
-def contact():
-    return render_template('contact.html')
-
-
-@app.route('/contact-form-handler')
-@app.route('/contact-form-handler.php')
-def contacthandler():
-    return render_template('contact-form-handler.php')
-
-
-@app.route('/contact-form-thank-you')
-@app.route('/contact-form-thank-you.html')
-def thanks():
-    return render_template('contact-form-thank-you.html')
-
-
-@app.route('/tippers')
-@app.route('/tippers.html')
-def tippers():
-    largest_tip = ("SELECT user_name, amount, account, a.system, timestamp "
-                   "FROM tip_bot.tip_list AS a, tip_bot.users AS b "
-                   "WHERE user_id = sender_id "
-                   "AND user_name IS NOT NULL "
-                   "AND processed = 2 "
-                   "AND user_name != 'mitche50' "
-                   "AND amount = (select max(amount) "
-                   "FROM tip_bot.tip_list) "
-                   "ORDER BY timestamp DESC "
-                   "LIMIT 1;")
-
-    tippers_call = (
-        "SELECT user_name AS 'screen_name', sum(amount) AS 'total_tips', account, b.system "
-        "FROM tip_bot.tip_list AS a, tip_bot.users AS b "
-        "WHERE user_id = sender_id "
-        "AND user_name IS NOT NULL "
-        "AND receiver_id IN (SELECT user_id FROM tip_bot.users)"
-        "GROUP BY sender_id "
-        "ORDER BY sum(amount) DESC "
-        "LIMIT 15")
-
-    tipper_table = get_db_data(tippers_call)
-    top_tipper = get_db_data(largest_tip)
-    top_tipper_date = top_tipper[0][4].date()
-    return render_template(
-        'tippers.html',
-        tipper_table=tipper_table,
-        top_tipper=top_tipper,
-        top_tipper_date=top_tipper_date)
-
-
-@app.route('/tiplist')
-def tip_list():
-    tip_list_call = (
-        "SELECT t1.user_name AS 'Sender ID', t2.user_name AS 'Receiver ID', t1.amount, "
-        "t1.account AS 'Sender Account', t2.account AS 'Receiver Account', t1.system, t1.timestamp "
-        "FROM "
-        "(SELECT user_name, amount, account, a.system, timestamp "
-        "FROM tip_bot.tip_list AS a, tip_bot.users AS b "
-        "WHERE user_id = sender_id "
-        "AND user_name IS NOT NULL "
-        "AND processed = 2 "
-        "AND user_name != 'mitche50' "
-        "ORDER BY timestamp desc "
-        "LIMIT 50) AS t1 "
-        "JOIN "
-        "(SELECT user_name, account, timestamp "
-        "FROM tip_bot.tip_list, tip_bot.users "
-        "WHERE user_id = receiver_id "
-        "AND user_name IS NOT NULL "
-        "AND processed = 2 "
-        "ORDER BY timestamp DESC "
-        "LIMIT 50) AS t2 "
-        "ON t1.timestamp = t2.timestamp")
-    tip_list_table = get_db_data(tip_list_call)
-    print(tip_list_table)
-    return render_template('tiplist.html', tip_list_table=tip_list_table)
-
-
-@app.route('/')
-@app.route('/index')
-@app.route('/index.html')
-def index():
-    r = requests.get('https://api.coinmarketcap.com/v2/ticker/1567/')
-    rx = r.json()
-    price = round(rx['data']['quotes']['USD']['price'], 2)
-
-    total_tipped_nano = (
-        "SELECT system, sum(amount) AS total "
-        "FROM tip_bot.tip_list "
-        "WHERE receiver_id IN (SELECT user_id FROM tip_bot.users) "
-        "GROUP BY system "
-        "ORDER BY total DESC")
-
-    total_tipped_number = (
-        "SELECT system, count(system) AS notips "
-        "FROM tip_bot.tip_list "
-        "WHERE receiver_id IN (SELECT user_id FROM tip_bot.users)"
-        "GROUP BY system "
-        "ORDER BY notips DESC")
-
-    total_tipped_nano_table = get_db_data(total_tipped_nano)
-    total_tipped_number_table = get_db_data(total_tipped_number)
-    total_value_usd = round(total_tipped_number_table[0][1] * price, 2)
-
-    logging.info("total_value_usd: {}".format(total_value_usd))
-    logging.info(
-        "total_tipped_nano_table = {}".format(total_tipped_nano_table))
-    logging.info(
-        "total_tipped_number_table = {}".format(total_tipped_number_table))
-    return render_template(
-        'index.html',
-        total_tipped_nano_table=total_tipped_nano_table,
-        total_tipped_number_table=total_tipped_number_table,
-        total_value_usd=total_value_usd,
-        price=price)
-
-
-@app.route('/webhooks/telegram/set_webhook')
+@app.route('/telegram/set_webhook')
 def telegram_webhook():
-    response = telegram_bot.setWebhook(
-        'https://nanotipbot.com/webhooks/telegram')
+    # 443, 80, 88, 8443
+    response = telegram_bot.setWebhook(SERVER_URL + 'telegram')
     if response:
         return "Webhook setup successfully"
     else:
         return "Error {}".format(response)
 
 
-@app.route('/webhooks/telegram', methods=["POST"])
+@app.route('/telegram', methods=["POST"])
 def telegram_event():
     message = {
         # id:                     ID of the received tweet - Error logged through None value

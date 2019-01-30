@@ -1,26 +1,29 @@
+import configparser
+import logging
+import os
+from datetime import datetime
+from decimal import Decimal
 from http import HTTPStatus
 
 import nano
-from modules.currency import *
-from modules.social import *
+
+from . import currency, db, social
 
 # Set Log File
 logging.basicConfig(
     handlers=[
-        logging.FileHandler('/root/webhooks/webhooks.log', 'a', 'utf-8')
+        logging.FileHandler(os.environ['MY_LOG_DIR'] + '/webhooks.log', 'a')
     ],
     level=logging.INFO)
 
 # Read config and parse constants
 config = configparser.ConfigParser()
-config.read('/root/webhooks/webhookconfig.ini')
+config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')
 
 # Set constants
 BULLET = u"\u2022"
 NODE_IP = config.get('webhooks', 'node_ip')
 WALLET = config.get('webhooks', 'wallet')
-BOT_NAME = config.get('webhooks', 'bot_name')
-BOT_ACCOUNT = config.get('webhooks', 'bot_account')
 MIN_TIP = config.get('webhooks', 'min_tip')
 
 # Connect to global functions
@@ -74,7 +77,7 @@ def parse_action(message):
                 redirect_tip_text = (
                     "Tips are processed through public messages now.  Please send in the format "
                     "@NosTipBot !tip .0001 @user1.")
-                send_dm(message['sender_id'], redirect_tip_text)
+                social.send_dm(message['sender_id'], redirect_tip_text)
             except Exception as e:
                 logging.info("Exception: {}".format(e))
                 raise e
@@ -115,7 +118,7 @@ def parse_action(message):
                 wrong_format_text = (
                     "The command or syntax you sent is not recognized.  Please send !help for a list "
                     "of commands and what they do.")
-                send_dm(message['sender_id'], wrong_format_text)
+                social.send_dm(message['sender_id'], wrong_format_text)
                 logging.info('unrecognized syntax')
             except Exception as e:
                 logging.info("Exception: {}".format(e))
@@ -150,7 +153,7 @@ def help_process(message):
         "account to the provided Nos account.  Optional: You can include an amount to withdraw by "
         "sending !withdraw <amount> <address>.  Example: !withdraw 1 nos_123 would "
         "withdraw 1 Nos to account nos_123.\n\n")
-    send_dm(message['sender_id'], help_message)
+    social.send_dm(message['sender_id'], help_message)
     logging.info("{}: Help message sent!".format(datetime.now()))
 
 
@@ -162,7 +165,7 @@ def balance_process(message):
     balance_call = ("SELECT account, register FROM users WHERE user_id = {} "
                     "AND system = '{}'".format(message['sender_id'],
                                                message['system']))
-    data = get_db_data(balance_call)
+    data = db.get_db_data(balance_call)
     if not data:
         logging.info(
             "{}: User tried to check balance without an account".format(
@@ -170,7 +173,7 @@ def balance_process(message):
         balance_message = (
             "There is no account linked to your username.  Please respond with !register to "
             "create an account.")
-        send_dm(message['sender_id'], balance_message)
+        social.send_dm(message['sender_id'], balance_message)
     else:
         message['sender_account'] = data[0][0]
         sender_register = data[0][1]
@@ -179,9 +182,9 @@ def balance_process(message):
             set_register_call = (
                 "UPDATE users SET register = 1 WHERE user_id = {} AND system = '{}' AND "
                 "register = 0".format(message['sender_id'], message['system']))
-            set_db_data(set_register_call)
+            db.set_db_data(set_register_call)
 
-        receive_pending(message['sender_account'])
+        currency.receive_pending(message['sender_account'])
         balance_return = rpc.account_balance(
             account="{}".format(message['sender_account']))
         message['sender_balance_raw'] = balance_return['balance']
@@ -190,7 +193,7 @@ def balance_process(message):
 
         balance_text = "Your balance is {} Nos.".format(
             message['sender_balance'])
-        send_dm(message['sender_id'], balance_text)
+        social.send_dm(message['sender_id'], balance_text)
         logging.info("{}: Balance Message Sent!".format(datetime.now()))
 
 
@@ -203,7 +206,7 @@ def register_process(message):
     register_call = (
         "SELECT account, register FROM users WHERE user_id = {} AND system = '{}'"
         .format(message['sender_id'], message['system']))
-    data = get_db_data(register_call)
+    data = db.get_db_data(register_call)
 
     if not data:
         # Create an account for the user
@@ -214,9 +217,9 @@ def register_process(message):
             "VALUES({}, '{}', '{}', '{}',1)".format(
                 message['sender_id'], message['system'],
                 message['sender_screen_name'], sender_account))
-        set_db_data(account_create_call)
+        db.set_db_data(account_create_call)
         account_text = "You have successfully registered for an account.  Your account number is:"
-        send_account_message(account_text, message, sender_account)
+        social.send_account_message(account_text, message, sender_account)
 
         logging.info("{}: Register successful!".format(datetime.now()))
 
@@ -226,11 +229,11 @@ def register_process(message):
         account_registration_update = (
             "UPDATE users SET register = 1 WHERE user_id = {} AND "
             "register = 0".format(message['sender_id']))
-        set_db_data(account_registration_update)
+        db.set_db_data(account_registration_update)
 
         account_registration_text = "You have successfully registered for an account.  Your account number is:"
-        send_account_message(account_registration_text, message,
-                             sender_account)
+        social.send_account_message(account_registration_text, message,
+                                    sender_account)
 
         logging.info(
             "{}: User has an account, but needed to register.  Message sent".
@@ -240,8 +243,8 @@ def register_process(message):
         # The user had an account and already registered, so let them know their account.
         sender_account = data[0][0]
         account_already_registered = "You already have registered your account.  Your account number is:"
-        send_account_message(account_already_registered, message,
-                             sender_account)
+        social.send_account_message(account_already_registered, message,
+                                    sender_account)
 
         logging.info(
             "{}: User has a registered account.  Message sent.".format(
@@ -257,7 +260,7 @@ def account_process(message):
     sender_account_call = (
         "SELECT account, register FROM users WHERE user_id = {} AND system = '{}'"
         .format(message['sender_id'], message['system']))
-    account_data = get_db_data(sender_account_call)
+    account_data = db.get_db_data(sender_account_call)
     if not account_data:
         sender_account = rpc.account_create(
             wallet="{}".format(WALLET), work=True)
@@ -266,10 +269,10 @@ def account_process(message):
             "VALUES({}, '{}', '{}', '{}',1)".format(
                 message['sender_id'], message['system'],
                 message['sender_screen_name'], sender_account))
-        set_db_data(account_create_call)
+        db.set_db_data(account_create_call)
 
         account_text = "You didn't have an account set up, so I set one up for you.  Your account number is:"
-        send_account_message(account_text, message, sender_account)
+        social.send_account_message(account_text, message, sender_account)
 
         logging.info("{}: Created an account for the user!".format(
             datetime.now()))
@@ -282,10 +285,10 @@ def account_process(message):
             set_register_call = (
                 "UPDATE users SET register = 1 WHERE user_id = {} AND system = '{}' AND register = 0"
                 .format(message['sender_id'], message['system']))
-            set_db_data(set_register_call)
+            db.set_db_data(set_register_call)
 
         account_text = "Your account number is:"
-        send_account_message(account_text, message, sender_account)
+        social.send_account_message(account_text, message, sender_account)
 
         logging.info("{}: Sent the user their account number.".format(
             datetime.now()))
@@ -303,17 +306,17 @@ def withdraw_process(message):
         withdraw_account_call = (
             "SELECT account FROM users WHERE user_id = {} AND system = '{}'".
             format(message['sender_id'], message['system']))
-        withdraw_data = get_db_data(withdraw_account_call)
+        withdraw_data = db.get_db_data(withdraw_account_call)
 
         if not withdraw_data:
             withdraw_no_account_text = "You do not have an account.  Respond with !register to set one up."
-            send_dm(message['sender_id'], withdraw_no_account_text)
+            social.send_dm(message['sender_id'], withdraw_no_account_text)
             logging.info("{}: User tried to withdraw with no account".format(
                 datetime.now()))
 
         else:
             sender_account = withdraw_data[0][0]
-            receive_pending(sender_account)
+            currency.receive_pending(sender_account)
             balance_return = rpc.account_balance(
                 account='{}'.format(sender_account))
 
@@ -326,7 +329,7 @@ def withdraw_process(message):
                 invalid_account_text = (
                     "The account number you provided is invalid.  Please double check and "
                     "resend your request.")
-                send_dm(message['sender_id'], invalid_account_text)
+                social.send_dm(message['sender_id'], invalid_account_text)
                 logging.info(
                     "{}: The xrb account number is invalid: {}".format(
                         datetime.now(), receiver_account))
@@ -335,7 +338,7 @@ def withdraw_process(message):
                 no_balance_text = (
                     "You have 0 balance in your account.  Please deposit to your address {} to "
                     "send more tips!".format(sender_account))
-                send_dm(message['sender_id'], no_balance_text)
+                social.send_dm(message['sender_id'], no_balance_text)
                 logging.info(
                     "{}: The user tried to withdraw with 0 balance".format(
                         datetime.now()))
@@ -351,7 +354,8 @@ def withdraw_process(message):
                             "You did not send a number to withdraw.  Please resend with the format"
                             "!withdraw <account> or !withdraw <amount> <account>"
                         )
-                        send_dm(message['sender_id'], invalid_amount_text)
+                        social.send_dm(message['sender_id'],
+                                       invalid_amount_text)
                         return
                     withdraw_amount_raw = int(
                         withdraw_amount * 1000000000000000000000000000000)
@@ -360,14 +364,15 @@ def withdraw_process(message):
                         not_enough_balance_text = (
                             "You do not have that much Nos in your account.  To withdraw your "
                             "full amount, send !withdraw <account>")
-                        send_dm(message['sender_id'], not_enough_balance_text)
+                        social.send_dm(message['sender_id'],
+                                       not_enough_balance_text)
                         return
                 else:
                     withdraw_amount_raw = balance_return['balance']
                     withdraw_amount = balance_return[
                         'balance'] / 1000000000000000000000000000000
                 # send the total balance to the provided account
-                work = get_pow(sender_account)
+                work = currency.get_pow(sender_account)
                 if work == '':
                     logging.info("{}: processed without work".format(
                         datetime.now()))
@@ -390,7 +395,7 @@ def withdraw_process(message):
                 # respond that the withdraw has been processed
                 withdraw_text = ("You have successfully withdrawn {} Nos!".
                                  format(withdraw_amount))
-                send_dm(message['sender_id'], withdraw_text)
+                social.send_dm(message['sender_id'], withdraw_text)
                 logging.info("{}: Withdraw processed.  Hash: {}".format(
                     datetime.now(), send_hash))
     else:
@@ -400,7 +405,7 @@ def withdraw_process(message):
             "withdraw 1 Nos to account nos_123.  Also, !withdraw "
             "nos_123 would withdraw your entire balance to account "
             "nos_123.")
-        send_dm(message['sender_id'], incorrect_withdraw_text)
+        social.send_dm(message['sender_id'], incorrect_withdraw_text)
         logging.info("{}: User sent a withdraw with invalid syntax.".format(
             datetime.now()))
 
@@ -411,33 +416,33 @@ def tip_process(message, users_to_tip):
     """
     logging.info("{}: in tip_process".format(datetime.now()))
 
-    message, users_to_tip = set_tip_list(message, users_to_tip)
+    message, users_to_tip = social.set_tip_list(message, users_to_tip)
     if len(users_to_tip) < 1 and message['system'] != 'telegram':
         no_users_text = (
             "Looks like you didn't enter in anyone to tip, or you mistyped someone's handle.  You can try "
             "to tip again using the format !tip 1234 @username")
-        send_reply(message, no_users_text)
+        social.send_reply(message, no_users_text)
         return
 
-    message = validate_sender(message)
+    message = social.validate_sender(message)
     if message['sender_account'] is None or message['tip_amount'] <= 0:
         return
 
-    message = validate_total_tip_amount(message)
+    message = social.validate_total_tip_amount(message)
     if message['tip_amount'] <= 0:
         return
 
     for t_index in range(0, len(users_to_tip)):
-        send_tip(message, users_to_tip, t_index)
+        currency.send_tip(message, users_to_tip, t_index)
 
     # Inform the user that all tips were sent.
     if len(users_to_tip) >= 2:
         multi_tip_success = (
             "You have successfully sent your {} Nos tips.".format(
                 message['tip_amount_text']))
-        send_reply(message, multi_tip_success)
+        social.send_reply(message, multi_tip_success)
 
     elif len(users_to_tip) == 1:
         tip_success = ("You have successfully sent your {} Nos tip.".format(
             message['tip_amount_text']))
-        send_reply(message, tip_success)
+        social.send_reply(message, tip_success)

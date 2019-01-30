@@ -4,23 +4,22 @@ import os
 from datetime import datetime
 from decimal import Decimal
 
+import nano
 import pyqrcode
 import telegram
 
-import nano
-from modules.currency import receive_pending
-from modules.db import get_db_data, set_db_data
+from . import currency, db
 
 # Set Log File
 logging.basicConfig(
     handlers=[
-        logging.FileHandler('/root/webhooks/webhooks.log', 'a', 'utf-8')
+        logging.FileHandler(os.environ['MY_LOG_DIR'] + '/webhooks.log', 'a')
     ],
     level=logging.INFO)
 
 # Read config and parse constants
 config = configparser.ConfigParser()
-config.read('/root/webhooks/webhookconfig.ini')
+config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')
 
 # Telegram API
 TELEGRAM_KEY = config.get('webhooks', 'telegram_key')
@@ -29,8 +28,6 @@ TELEGRAM_KEY = config.get('webhooks', 'telegram_key')
 MIN_TIP = config.get('webhooks', 'min_tip')
 NODE_IP = config.get('webhooks', 'node_ip')
 
-# IDs
-BOT_ID_TELEGRAM = config.get('webhooks', 'bot_id_telegram')
 
 # Connect to Telegram
 telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
@@ -136,7 +133,7 @@ def set_tip_list(message, users_to_tip):
                     "WHERE chat_id = {} and member_name = '{}'".format(
                         message['chat_id'], message['text'][t_index][1:]))
 
-                user_check_data = get_db_data(check_user_call)
+                user_check_data = db.get_db_data(check_user_call)
                 if user_check_data:
                     receiver_id = user_check_data[0][0]
                     receiver_screen_name = user_check_data[0][1]
@@ -179,7 +176,7 @@ def validate_sender(message):
     logging.info("system: {}".format(message['system']))
     db_call = "SELECT account, register FROM users where user_id = {} AND system = '{}'".format(
         message['sender_id'], message['system'])
-    sender_account_info = get_db_data(db_call)
+    sender_account_info = db.get_db_data(db_call)
 
     if not sender_account_info:
         no_account_text = (
@@ -198,9 +195,9 @@ def validate_sender(message):
     if message['sender_register'] != 1:
         db_call = "UPDATE users SET register = 1 WHERE user_id = {} AND system = '{}'".format(
             message['sender_id'], message['system'])
-        set_db_data(db_call)
+        db.set_db_data(db_call)
 
-    receive_pending(message['sender_account'])
+    currency.receive_pending(message['sender_account'])
     message['sender_balance_raw'] = rpc.account_balance(
         account='{}'.format(message['sender_account']))
     message['sender_balance'] = message['sender_balance_raw'][
@@ -240,7 +237,7 @@ def check_telegram_member(chat_id, chat_name, member_id, member_name):
         "SELECT member_id, member_name FROM telegram_chat_members "
         "WHERE chat_id = {} and member_name = '{}'".format(
             chat_id, member_name))
-    user_check_data = get_db_data(check_user_call)
+    user_check_data = db.get_db_data(check_user_call)
 
     logging.info("checking if user exists")
     if not user_check_data:
@@ -250,7 +247,7 @@ def check_telegram_member(chat_id, chat_name, member_id, member_name):
             "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
             "VALUES ({}, '{}', {}, '{}')".format(chat_id, chat_name, member_id,
                                                  member_name))
-        set_db_data(new_chat_member_call)
+        db.set_db_data(new_chat_member_call)
 
     return
 

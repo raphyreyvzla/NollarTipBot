@@ -1,22 +1,25 @@
+import configparser
 import json
+import logging
+import os
 import re
-
-import requests
+from datetime import datetime
 
 import nano
-from modules.db import *
-from modules.social import send_dm, send_reply
+import requests
+
+from . import db, social
 
 # Set Log File
 logging.basicConfig(
     handlers=[
-        logging.FileHandler('/root/webhooks/webhooks.log', 'a', 'utf-8')
+        logging.FileHandler(os.environ['MY_LOG_DIR'] + '/webhooks.log', 'a')
     ],
     level=logging.INFO)
 
 # Read config and parse constants
 config = configparser.ConfigParser()
-config.read('/root/webhooks/webhookconfig.ini')
+config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')
 
 # Constants
 WALLET = config.get('webhooks', 'wallet')
@@ -109,7 +112,7 @@ def send_tip(message, users_to_tip, tip_index):
     if str(users_to_tip[tip_index]['receiver_id']) == str(
             message['sender_id']):
         self_tip_text = "Self tipping is not allowed.  Please use this bot to spread the $NANO to other users!"
-        send_reply(message, self_tip_text)
+        social.send_reply(message, self_tip_text)
 
         logging.info("{}: User tried to tip themself").format(datetime.now())
         return
@@ -118,7 +121,7 @@ def send_tip(message, users_to_tip, tip_index):
     receiver_account_get = (
         "SELECT account FROM users where user_id = {} and system = '{}'".
         format(int(users_to_tip[tip_index]['receiver_id']), message['system']))
-    receiver_account_data = get_db_data(receiver_account_get)
+    receiver_account_data = db.get_db_data(receiver_account_get)
 
     # If they don't, create an account for them
     if not receiver_account_data:
@@ -130,7 +133,7 @@ def send_tip(message, users_to_tip, tip_index):
                 users_to_tip[tip_index]['receiver_id'], message['system'],
                 users_to_tip[tip_index]['receiver_screen_name'],
                 users_to_tip[tip_index]['receiver_account']))
-        set_db_data(create_receiver_account)
+        db.set_db_data(create_receiver_account)
         logging.info(
             "{}: Sender sent to a new receiving account.  Created  account {}".
             format(datetime.now(),
@@ -168,8 +171,7 @@ def send_tip(message, users_to_tip, tip_index):
             work=work,
             id="tip-{}".format(message['tip_id']))
     # Update the DB
-    message['text'] = strip_emoji(message['text'])
-    set_db_data_tip(message, users_to_tip, tip_index)
+    db.set_db_data_tip(message, users_to_tip, tip_index)
 
     # Get receiver's new balance
     try:
@@ -178,7 +180,7 @@ def send_tip(message, users_to_tip, tip_index):
         balance_return = rpc.account_balance(
             account="{}".format(users_to_tip[tip_index]['receiver_account']))
         users_to_tip[tip_index]['balance'] = balance_return[
-            'balance'] / 1000000000000000000000000000000
+            'balance'] / (10**10)
 
         # create a string to remove scientific notation from small decimal tips
         if str(users_to_tip[tip_index]['balance'])[0] == ".":
@@ -195,7 +197,8 @@ def send_tip(message, users_to_tip, tip_index):
             "commands!  Learn more about NOS at https://nos.cash/".format(
                 message['sender_screen_name'], message['tip_amount_text'],
                 users_to_tip[tip_index]['balance']))
-        send_dm(users_to_tip[tip_index]['receiver_id'], receiver_tip_text)
+        social.send_dm(users_to_tip[tip_index]['receiver_id'],
+                       receiver_tip_text)
 
     except Exception as e:
         logging.info(
