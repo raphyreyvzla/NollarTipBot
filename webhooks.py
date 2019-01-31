@@ -48,9 +48,10 @@ def telegram_webhook():
     # 443, 80, 88, 8443
     response = telegram_bot.setWebhook(SERVER_URL + 'telegram')
     if response:
-        return "Webhook setup successfully"
+        print("Webhook setup successfully")
     else:
-        return "Error {}".format(response)
+        print("Error {}".format(response))
+    return response
 
 
 # Flask routing
