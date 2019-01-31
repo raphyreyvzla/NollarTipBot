@@ -43,8 +43,7 @@ def db_init():
 telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 
 
-# Flask routing
-@app.route('/telegram/set_webhook')
+@app.cli.command('telegram_webhook')
 def telegram_webhook():
     # 443, 80, 88, 8443
     response = telegram_bot.setWebhook(SERVER_URL + 'telegram')
@@ -54,6 +53,7 @@ def telegram_webhook():
         return "Error {}".format(response)
 
 
+# Flask routing
 @app.route('/telegram', methods=["POST"])
 def telegram_event():
     message = {

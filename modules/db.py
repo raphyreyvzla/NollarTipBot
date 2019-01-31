@@ -73,8 +73,7 @@ def check_table_exists(table_name):
     with db:
         db_cursor = db.cursor()
         stmt = "SHOW TABLES LIKE '{}'".format(table_name)
-        a = db_cursor.execute(stmt)
-        print(a)
+        db_cursor.execute(stmt)
         result = db_cursor.fetchall()
         return result
 
