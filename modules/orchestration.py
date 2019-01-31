@@ -162,9 +162,9 @@ def balance_process(message):
     When the user sends a DM containing !balance, reply with the balance of the account linked with their Twitter ID
     """
     logging.info("{}: In balance process".format(datetime.now()))
-    balance_call = ("SELECT account, register FROM users WHERE user_id = {} "
-                    "AND system = '{}'".format(message['sender_id'],
-                                               message['system']))
+    balance_call = (
+        "SELECT account, register FROM users WHERE user_id = {} ".format(
+            message['sender_id']))
     data = db.get_db_data(balance_call)
     if not data:
         logging.info(
@@ -180,8 +180,8 @@ def balance_process(message):
 
         if sender_register == 0:
             set_register_call = (
-                "UPDATE users SET register = 1 WHERE user_id = {} AND system = '{}' AND "
-                "register = 0".format(message['sender_id'], message['system']))
+                "UPDATE users SET register = 1 WHERE user_id = {} AND register = 0"
+                .format(message['sender_id']))
             db.set_db_data(set_register_call)
 
         currency.receive_pending(message['sender_account'])
@@ -189,7 +189,7 @@ def balance_process(message):
             account="{}".format(message['sender_account']))
         message['sender_balance_raw'] = balance_return['balance']
         message['sender_balance'] = balance_return[
-            'balance'] / 1000000000000000000000000000000
+            'balance'] / 10000000
 
         balance_text = "Your balance is {} Nos.".format(
             message['sender_balance'])
@@ -204,8 +204,8 @@ def register_process(message):
     """
     logging.info("{}: In register process.".format(datetime.now()))
     register_call = (
-        "SELECT account, register FROM users WHERE user_id = {} AND system = '{}'"
-        .format(message['sender_id'], message['system']))
+        "SELECT account, register FROM users WHERE user_id = {}".format(
+            message['sender_id']))
     data = db.get_db_data(register_call)
 
     if not data:
@@ -213,10 +213,10 @@ def register_process(message):
         sender_account = rpc.account_create(
             wallet="{}".format(WALLET), work=False)
         account_create_call = (
-            "INSERT INTO users (user_id, system, user_name, account, register) "
-            "VALUES({}, '{}', '{}', '{}',1)".format(
-                message['sender_id'], message['system'],
-                message['sender_screen_name'], sender_account))
+            "INSERT INTO users (user_id, user_name, account, register) "
+            "VALUES({}, '{}', '{}',1)".format(message['sender_id'],
+                                              message['sender_screen_name'],
+                                              sender_account))
         db.set_db_data(account_create_call)
         account_text = "You have successfully registered for an account.  Your account number is:"
         social.send_account_message(account_text, message, sender_account)
@@ -258,17 +258,17 @@ def account_process(message):
     """
     logging.info("{}: In account process.".format(datetime.now()))
     sender_account_call = (
-        "SELECT account, register FROM users WHERE user_id = {} AND system = '{}'"
-        .format(message['sender_id'], message['system']))
+        "SELECT account, register FROM users WHERE user_id = {}".format(
+            message['sender_id']))
     account_data = db.get_db_data(sender_account_call)
     if not account_data:
         sender_account = rpc.account_create(
             wallet="{}".format(WALLET), work=True)
         account_create_call = (
-            "INSERT INTO users (user_id, system, user_name, account, register) "
-            "VALUES({}, '{}', '{}', '{}',1)".format(
-                message['sender_id'], message['system'],
-                message['sender_screen_name'], sender_account))
+            "INSERT INTO users (user_id, user_name, account, register) "
+            "VALUES({}, '{}', '{}',1)".format(message['sender_id'],
+                                              message['sender_screen_name'],
+                                              sender_account))
         db.set_db_data(account_create_call)
 
         account_text = "You didn't have an account set up, so I set one up for you.  Your account number is:"
@@ -283,8 +283,8 @@ def account_process(message):
 
         if sender_register == 0:
             set_register_call = (
-                "UPDATE users SET register = 1 WHERE user_id = {} AND system = '{}' AND register = 0"
-                .format(message['sender_id'], message['system']))
+                "UPDATE users SET register = 1 WHERE user_id = {} AND register = 0"
+                .format(message['sender_id']))
             db.set_db_data(set_register_call)
 
         account_text = "Your account number is:"
@@ -304,8 +304,8 @@ def withdraw_process(message):
     if 3 >= len(message['dm_array']) >= 2:
         # if there is, retrieve the sender's account and wallet
         withdraw_account_call = (
-            "SELECT account FROM users WHERE user_id = {} AND system = '{}'".
-            format(message['sender_id'], message['system']))
+            "SELECT account FROM users WHERE user_id = {}".format(
+                message['sender_id']))
         withdraw_data = db.get_db_data(withdraw_account_call)
 
         if not withdraw_data:
@@ -358,7 +358,7 @@ def withdraw_process(message):
                                        invalid_amount_text)
                         return
                     withdraw_amount_raw = int(
-                        withdraw_amount * 1000000000000000000000000000000)
+                        withdraw_amount * 10000000)
                     if Decimal(withdraw_amount_raw) > Decimal(
                             balance_return['balance']):
                         not_enough_balance_text = (
@@ -370,7 +370,7 @@ def withdraw_process(message):
                 else:
                     withdraw_amount_raw = balance_return['balance']
                     withdraw_amount = balance_return[
-                        'balance'] / 1000000000000000000000000000000
+                        'balance'] / 10000000
                 # send the total balance to the provided account
                 work = currency.get_pow(sender_account)
                 if work == '':
@@ -417,12 +417,6 @@ def tip_process(message, users_to_tip):
     logging.info("{}: in tip_process".format(datetime.now()))
 
     message, users_to_tip = social.set_tip_list(message, users_to_tip)
-    if len(users_to_tip) < 1 and message['system'] != 'telegram':
-        no_users_text = (
-            "Looks like you didn't enter in anyone to tip, or you mistyped someone's handle.  You can try "
-            "to tip again using the format !tip 1234 @username")
-        social.send_reply(message, no_users_text)
-        return
 
     message = social.validate_sender(message)
     if message['sender_account'] is None or message['tip_amount'] <= 0:

@@ -28,7 +28,6 @@ TELEGRAM_KEY = config.get('webhooks', 'telegram_key')
 MIN_TIP = config.get('webhooks', 'min_tip')
 NODE_IP = config.get('webhooks', 'node_ip')
 
-
 # Connect to Telegram
 telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 
@@ -51,7 +50,7 @@ def send_dm(receiver, message):
 
 def check_message_action(message):
     """
-    Check to see if there are any key action values mentioned in the tweet.
+    Check to see if there are any key action values mentioned in the message.
     """
     logging.info("{}: in check_message_action.".format(datetime.now()))
     try:
@@ -68,7 +67,7 @@ def check_message_action(message):
 
 def validate_tip_amount(message):
     """
-    Validate the tweet includes an amount to tip, and if that tip amount is greater than the minimum tip amount.
+    Validate the message includes an amount to tip, and if that tip amount is greater than the minimum tip amount.
     """
     logging.info("{}: in validate_tip_amount".format(datetime.now()))
     try:
@@ -97,7 +96,7 @@ def validate_tip_amount(message):
 
     try:
         message['tip_amount_raw'] = Decimal(
-            message['tip_amount']) * 1000000000000000000000000000000
+            message['tip_amount']) * 10000000
     except Exception as e:
         logging.info(
             "{}: Exception converting tip_amount to tip_amount_raw".format(
@@ -173,9 +172,8 @@ def validate_sender(message):
     """
     logging.info("{}: validating sender".format(datetime.now()))
     logging.info("sender id: {}".format(message['sender_id']))
-    logging.info("system: {}".format(message['system']))
-    db_call = "SELECT account, register FROM users where user_id = {} AND system = '{}'".format(
-        message['sender_id'], message['system'])
+    db_call = "SELECT account, register FROM users where user_id = {}".format(
+        message['sender_id'])
     sender_account_info = db.get_db_data(db_call)
 
     if not sender_account_info:
@@ -193,15 +191,15 @@ def validate_sender(message):
     message['sender_register'] = sender_account_info[0][1]
 
     if message['sender_register'] != 1:
-        db_call = "UPDATE users SET register = 1 WHERE user_id = {} AND system = '{}'".format(
-            message['sender_id'], message['system'])
+        db_call = "UPDATE users SET register = 1 WHERE user_id = {}".format(
+            message['sender_id'])
         db.set_db_data(db_call)
 
     currency.receive_pending(message['sender_account'])
     message['sender_balance_raw'] = rpc.account_balance(
         account='{}'.format(message['sender_account']))
     message['sender_balance'] = message['sender_balance_raw'][
-        'balance'] / 1000000000000000000000000000000
+        'balance'] / 10000000
 
     return message
 
@@ -212,7 +210,7 @@ def validate_total_tip_amount(message):
     """
     logging.info("{}: validating total tip amount".format(datetime.now()))
     if message['sender_balance_raw']['balance'] < (
-            message['total_tip_amount'] * 1000000000000000000000000000000):
+            message['total_tip_amount'] * 10000000):
         not_enough_text = (
             "You do not have enough Nos to cover this {} Nos tip.  Please check your balance by "
             "sending a DM to me with !balance and retry.".format(

@@ -196,11 +196,11 @@ def set_db_data_tip(message, users_to_tip, t_index):
         with db:
             db_cursor = db.cursor()
             db_cursor.execute(
-                "INSERT INTO tip_list (dm_id, tx_id, processed, sender_id, receiver_id, system, dm_text, amount)"
-                " VALUES (%s, %s, 2, %s, %s, %s, %s, %s)",
+                "INSERT INTO tip_list (dm_id, tx_id, processed, sender_id, receiver_id, dm_text, amount)"
+                " VALUES (%s, %s, 2, %s, %s, %s, %s)",
                 (message['id'], message['tip_id'], message['sender_id'],
-                 users_to_tip[t_index]['receiver_id'], message['system'],
-                 message['text'], Decimal(message['tip_amount'])))
+                 users_to_tip[t_index]['receiver_id'], message['text'],
+                 Decimal(message['tip_amount'])))
     except Exception as e:
         logging.info("{}: Exception in set_db_data_tip".format(datetime.now()))
         logging.info("{}: {}".format(datetime.now(), e))

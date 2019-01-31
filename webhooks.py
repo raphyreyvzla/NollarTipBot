@@ -58,17 +58,17 @@ def telegram_webhook():
 @app.route('/telegram', methods=["POST"])
 def telegram_event():
     message = {
-        # id:                     ID of the received tweet - Error logged through None value
-        # text:                   A list containing the text of the received tweet, split by ' '
+        # id:                     ID of the received message - Error logged through None value
+        # text:                   A list containing the text of the received message, split by ' '
         # sender_account:         Nano account of sender - Error logged through None value
         # sender_register:        Registration status with Tip Bot of sender account
         # sender_balance_raw:     Amount of Nano in sender's account, stored in raw
         # sender_balance:         Amount of Nano in sender's account, stored in Nano
 
         # action_index:           Location of key action value *(currently !tip only)
-        # action:                 Action found in the received tweet - Error logged through None value
+        # action:                 Action found in the received message - Error logged through None value
 
-        # starting_point:         Location of action sent via tweet (currently !tip only)
+        # starting_point:         Location of action sent via message (currently !tip only)
 
         # tip_amount:             Value of tip to be sent to receiver(s) - Error logged through -1
         # tip_amount_text:        Value of the tip stored in a string to prevent formatting issues
@@ -76,7 +76,6 @@ def telegram_event():
         # tip_id:                 ID of the tip, used to prevent double sending of tips.  Comprised of
         #                         message['id'] + index of user in users_to_tip
         # send_hash:              Hash of the send RPC transaction
-        # system:                 System that the command was sent from
     }
 
     users_to_tip = [
@@ -86,7 +85,6 @@ def telegram_event():
         #    receiver_register:      Registration status with Tip Bot of receiver account
     ]
 
-    message['system'] = 'telegram'
     request_json = request.get_json()
     logging.info("request_json: {}".format(request_json))
     if 'message' in request_json.keys():
