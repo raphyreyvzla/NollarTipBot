@@ -5,9 +5,6 @@ RUN apt-get -y update && apt-get install -y apt-utils apache2 apache2-utils liba
 RUN ln /usr/bin/python3 /usr/bin/python
 RUN ln /usr/bin/pip3 /usr/bin/pip
 
-ARG var_name
-ENV env_var_name=$var_name
-
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
@@ -23,8 +20,6 @@ WORKDIR /bot
 
 ENV MY_LOG_DIR=/bot/logs/
 ENV MY_CONF_DIR=/bot/config
-
-RUN echo $(python3 --version)
 
 ENV FLASK_APP=webhooks.py
 

@@ -126,5 +126,6 @@ dmypy.json
 /private
 /logs
 /config/webhooks.ini
+*.yml
 
 !/**/.gitkeep

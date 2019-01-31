@@ -22,10 +22,11 @@ DB_HOST = config.get('webhooks', 'host')
 DB_USER = config.get('webhooks', 'user')
 DB_PW = config.get('webhooks', 'password')
 DB_SCHEMA = config.get('webhooks', 'schema')
+DB_PORT = int(config.get('webhooks', 'port'))
 
 
 def check_db_exist():
-    db = pymysql.connect(host=DB_HOST, user=DB_USER, passwd=DB_PW, port=3307)
+    db = pymysql.connect(host=DB_HOST, user=DB_USER, passwd=DB_PW, port=DB_PORT)
     with db:
         sql = "SHOW DATABASES LIKE '{}'".format(DB_SCHEMA)
         db_cursor = db.cursor()
@@ -34,7 +35,8 @@ def check_db_exist():
 
 
 def create_db():
-    db = pymysql.connect(host=DB_HOST, user=DB_USER, passwd=DB_PW, port=3307)
+    db = pymysql.connect(
+        host=DB_HOST, user=DB_USER, passwd=DB_PW, port=DB_PORT)
     with db:
         db_cursor = db.cursor()
         sql = 'CREATE DATABASE IF NOT EXISTS {}'.format(DB_SCHEMA)
@@ -47,7 +49,7 @@ def delete_db():
     try:
         if check_db_exist():
             db = pymysql.connect(
-                host=DB_HOST, user=DB_USER, passwd=DB_PW, port=3307)
+                host=DB_HOST, user=DB_USER, passwd=DB_PW, port=DB_PORT)
             with db:
                 db_cursor = db.cursor()
                 sql = 'DROP DATABASE {}'.format(DB_SCHEMA)
@@ -67,7 +69,7 @@ def check_table_exists(table_name):
         user=DB_USER,
         passwd=DB_PW,
         db=DB_SCHEMA,
-        port=3307,
+        port=DB_PORT,
         use_unicode=True,
         charset="utf8")
     with db:
@@ -83,7 +85,7 @@ def execute_sql(sql):
         host=DB_HOST,
         user=DB_USER,
         passwd=DB_PW,
-        port=3307,
+        port=DB_PORT,
         db=DB_SCHEMA,
         use_unicode=True,
         charset="utf8")
@@ -143,7 +145,7 @@ def get_db_data(db_call):
     db = pymysql.connect(
         host=DB_HOST,
         user=DB_USER,
-        port=3307,
+        port=DB_PORT,
         passwd=DB_PW,
         db=DB_SCHEMA,
         use_unicode=True,
@@ -163,7 +165,7 @@ def set_db_data(db_call):
         host=DB_HOST,
         user=DB_USER,
         passwd=DB_PW,
-        port=3307,
+        port=DB_PORT,
         db=DB_SCHEMA,
         use_unicode=True,
         charset="utf8")
@@ -188,7 +190,7 @@ def set_db_data_tip(message, users_to_tip, t_index):
         host=DB_HOST,
         user=DB_USER,
         passwd=DB_PW,
-        port=3307,
+        port=DB_PORT,
         db=DB_SCHEMA,
         use_unicode=True,
         charset="utf8")
