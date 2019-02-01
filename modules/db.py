@@ -204,9 +204,10 @@ def set_db_data_tip(message, users_to_tip, t_index):
     try:
         with db:
             db_cursor = db.cursor()
+            message = ' '.join(message['text'])
             sql = "INSERT INTO tip_list (dm_id, tx_id, processed, sender_id, receiver_id, dm_text, amount) VALUES ({}, {}, 2, {}, {}, {}, {})".format(
                 message['id'], message['tip_id'], message['sender_id'],
-                users_to_tip[t_index]['receiver_id'], message['text'],
+                users_to_tip[t_index]['receiver_id'], message,
                 Decimal(message['tip_amount']))
             db_cursor.execute(sql)
     except Exception as e:
