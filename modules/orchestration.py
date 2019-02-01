@@ -9,16 +9,6 @@ import nano
 
 from . import currency, db, social
 
-# Set Log File
-logging.basicConfig()
-logging.getLogger(__name__).setLevel(logging.INFO)
-log = logging.getLogger('werkzeug')
-ch = logging.StreamHandler()
-formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-log.addHandler(ch)
-
 # Read config and parse constants
 config = configparser.ConfigParser()
 config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')

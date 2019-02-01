@@ -8,15 +8,6 @@ from modules.orchestration import *
 from modules.social import *
 from modules.db import *
 
-# Set Log File
-logging.basicConfig()
-logging.getLogger(__name__).setLevel(logging.INFO)
-log = logging.getLogger('werkzeug')
-ch = logging.StreamHandler()
-formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-log.addHandler(ch)
 
 # Read config and parse constants
 config = configparser.ConfigParser()
@@ -31,6 +22,12 @@ SERVER_URL = config.get('webhooks', 'server_url')
 
 # Set up Flask routing
 app = Flask(__name__)
+
+@app.before_first_request
+def setup_logging():
+    if not app.debug:
+        app.logger.addHandler(logging.StreamHandler())
+        app.logger.setLevel(logging.INFO)
 
 
 # Creating databases
