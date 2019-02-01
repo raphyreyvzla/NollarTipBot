@@ -23,13 +23,6 @@ SERVER_URL = config.get('webhooks', 'server_url')
 app = Flask(__name__)
 
 
-@app.before_first_request
-def setup_logging():
-    if not app.debug:
-        app.logger.addHandler(logging.StreamHandler())
-        app.logger.setLevel(print)
-
-
 # Creating databases
 @app.cli.command('db_init')
 def db_init():
