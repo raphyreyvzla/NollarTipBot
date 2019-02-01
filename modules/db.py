@@ -99,11 +99,11 @@ def create_tables():
     if not users_exist:
         # create users table
         sql = """
-        CREATE TABLE USERS ( 
-            USER_ID INT,
-            USER_NAME  CHAR(64),
-            ACCOUNT CHAR(128),  
-            REGISTER SMALLINT)
+        CREATE TABLE IF NOT EXISTS users ( 
+            user_id INT,
+            user_name  CHAR(64),
+            account CHAR(128),  
+            register SMALLINT)
             """
         execute_sql(sql)
         print("Checking if table was created: {}".format(
@@ -113,11 +113,11 @@ def create_tables():
     if not users_exist:
         # create telegram_chat_members table
         sql = """
-        CREATE TABLE IF NOT EXISTS TELEGRAM_CHAT_MEMBERS (
-            CHAT_ID INT,
-            CHAT_NAME  CHAR(128),
-            MEMBER_ID INT,  
-            MEMBER_NAME CHAR(128))
+        CREATE TABLE IF NOT EXISTS telegram_chat_members (
+            chat_id INT,
+            chat_name  CHAR(128),
+            member_id INT,  
+            member_name CHAR(128))
             """
         res = execute_sql(sql)
 
@@ -125,15 +125,15 @@ def create_tables():
     if not users_exist:
         # create tip_list table
         sql = """
-        CREATE TABLE IF NOT EXISTS TIP_LIST (
-            DM_ID INT,
-            TX_ID  INT,
-            PROCESSED INT,  
-            SENDER_ID INT,  
-            RECEIVER_ID INT,  
-            DM_TEXT CHAR(128),  
-            AMOUNT INT,  
-            MEMBER_NAME CHAR(64))
+        CREATE TABLE IF NOT EXISTS tip_list (
+            dm_id INT,
+            tx_id  INT,
+            processed INT,  
+            sender_id INT,  
+            receiver_id INT,  
+            dm_text CHAR(128),  
+            amount INT,  
+            member_name CHAR(64))
             """
         res = execute_sql(sql)
 
