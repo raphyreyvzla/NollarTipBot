@@ -98,7 +98,8 @@ def drop_table(table_name):
         else:
             logging.info('Table {} does not exist'.format(table_name))
     except Exception as e:
-        logging.info('Failed dropping table {}, got error {}'.format(table_name, e))
+        logging.info('Failed dropping table {}, got error {}'.format(
+            table_name, e))
 
 
 def create_tables():
@@ -139,8 +140,7 @@ def create_tables():
             sender_id INT,  
             receiver_id INT,  
             dm_text CHAR(128),  
-            amount INT,  
-            member_name CHAR(64))
+            amount INT)
             """
         res = execute_sql(sql)
 
@@ -204,13 +204,13 @@ def set_db_data_tip(message, users_to_tip, t_index):
     try:
         with db:
             db_cursor = db.cursor()
-            db_cursor.execute(
-                "INSERT INTO tip_list (dm_id, tx_id, processed, sender_id, receiver_id, dm_text, amount)"
-                " VALUES (%s, %s, 2, %s, %s, %s, %s)",
-                (message['id'], message['tip_id'], message['sender_id'],
-                 users_to_tip[t_index]['receiver_id'], message['text'],
-                 Decimal(message['tip_amount'])))
+            sql = "INSERT INTO tip_list (dm_id, tx_id, processed, sender_id, receiver_id, dm_text, amount) VALUES ({}, {}, 2, {}, {}, {}, {})".format(
+                message['id'], message['tip_id'], message['sender_id'],
+                users_to_tip[t_index]['receiver_id'], message['text'],
+                Decimal(message['tip_amount']))
+            db_cursor.execute(sql)
     except Exception as e:
         logging.info("{}: Exception in set_db_data_tip".format(datetime.now()))
+        logging.info('Failded query: {}'.format(sql))
         logging.info("{}: {}".format(datetime.now(), e))
         raise e
