@@ -93,6 +93,10 @@ def telegram_event(path):
         #    receiver_register:      Registration status with Tip Bot of receiver account
     ]
 
+
+
+
+
     request_json = request.get_json()
     logging.info("request_json: {}".format(request_json))
 
@@ -117,6 +121,18 @@ def telegram_event(path):
                 datetime.now(), message['dm_action']))
 
             parse_action(message)
+    
+    # personal: 
+    # INFO:root:request_json: {'update_id': 991526597, 'message': {'message_id': 161,
+    #  'from': {'id': 185519199, 'is_bot': False, 'first_name': 'Paweł', 'last_name': 'Buglewicz',
+    #  'username': 'IllMODED', 'language_code': 'pl'}, 'chat': {'id': 185519199, 'first_name': 'Paweł',
+    # 'last_name': 'Buglewicz', 'username': 'IllMODED', 'type': 'private'}, 'date': 1549028343,
+    # 'text': '/balance', 'entities': [{'offset': 0, 'length': 8, 'type': 'bot_command'}]}}
+
+    # inline       
+    # INFO:root:request_json: {'update_id': 991526595, 'inline_query': {'id': '796798893204303034',
+    #  'from': {'id': 185519199, 'is_bot': False, 'first_name': 'Paweł', 'last_name': 'Buglewicz',
+    #  'username': 'IllMODED', 'language_code': 'pl'}, 'query': '!tip 1 @massi_nos', 'offset': ''}}
 
         elif (request_json['message']['chat']['type'] == 'supergroup'
               or request_json['message']['chat']['type'] == 'group'):

@@ -27,7 +27,6 @@ telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 # Connect to node
 rpc = nano.rpc.Client(NODE_IP)
 
-
 def send_dm(receiver, message):
     """
     Send the provided message to the provided receiver

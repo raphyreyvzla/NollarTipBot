@@ -73,8 +73,7 @@ def get_pow(sender_account):
     """
     logging.info("{}: in get_pow".format(datetime.now()))
     try:
-        account_frontiers = rpc.accounts_frontiers(
-            accounts=["{}".format(sender_account)])
+        account_frontiers = rpc.accounts_frontiers([sender_account])
         frontier_hash = account_frontiers[sender_account]
     except Exception as e:
         logging.info("{}: Error checking frontier: {}".format(
