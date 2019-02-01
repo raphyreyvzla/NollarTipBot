@@ -27,7 +27,7 @@ app = Flask(__name__)
 def setup_logging():
     if not app.debug:
         app.logger.addHandler(logging.StreamHandler())
-        app.logger.setLevel(logging.INFO)
+        app.logger.setLevel(print)
 
 
 # Creating databases
@@ -99,11 +99,11 @@ def telegram_event(path):
     ]
 
     request_json = request.get_json()
-    logging.info("request_json: {}".format(request_json))
+    print("request_json: {}".format(request_json))
 
     if 'message' in request_json.keys():
         if request_json['message']['chat']['type'] == 'private':
-            logging.info("Direct message received in Telegram.  Processing.")
+            print("Direct message received in Telegram.  Processing.")
             message['sender_id'] = request_json['message']['from']['id']
 
             try:
@@ -118,7 +118,7 @@ def telegram_event(path):
             message['dm_array'] = message['text'].split(" ")
             message['dm_action'] = message['dm_array'][0].lower()
 
-            logging.info("{}: action identified: {}".format(
+            print("{}: action identified: {}".format(
                 datetime.now(), message['dm_action']))
 
             parse_action(message)
@@ -150,7 +150,7 @@ def telegram_event(path):
 
                 message = check_message_action(message)
                 if message['action'] is None:
-                    logging.info(
+                    print(
                         "{}: Mention of nano tip bot without a !tip command.".
                         format(datetime.now()))
                     return '', HTTPStatus.OK
@@ -166,7 +166,7 @@ def telegram_event(path):
                         try:
                             tip_process(message, users_to_tip)
                         except Exception as e:
-                            logging.info("Exception: {}".format(e))
+                            print("Exception: {}".format(e))
                             raise e
 
                         os._exit(0)
@@ -174,7 +174,7 @@ def telegram_event(path):
                         return '', HTTPStatus.OK
 
             elif 'new_chat_member' in request_json['message']:
-                logging.info("new member joined chat, adding to DB")
+                print("new member joined chat, adding to DB")
                 chat_id = request_json['message']['chat']['id']
                 chat_name = request_json['message']['chat']['title']
                 member_id = request_json['message']['new_chat_member']['id']
@@ -193,7 +193,7 @@ def telegram_event(path):
                 member_id = request_json['message']['left_chat_member']['id']
                 member_name = request_json['message']['left_chat_member'][
                     'username']
-                logging.info(
+                print(
                     "member {}-{} left chat {}-{}, removing from DB.".format(
                         member_id, member_name, chat_id, chat_name))
 
@@ -208,7 +208,7 @@ def telegram_event(path):
                 chat_name = request_json['message']['chat']['title']
                 member_id = request_json['message']['from']['id']
                 member_name = request_json['message']['from']['username']
-                logging.info(
+                print(
                     "member {} created chat {}, inserting creator into DB.".
                     format(member_name, chat_name))
 
@@ -219,7 +219,7 @@ def telegram_event(path):
                 set_db_data(new_chat_call)
 
         else:
-            logging.info("request: {}".format(request_json))
+            print("request: {}".format(request_json))
 
     return 'ok'
 

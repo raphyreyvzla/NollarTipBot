@@ -180,11 +180,11 @@ def set_db_data(db_call):
         with db:
             db_cursor = db.cursor()
             db_cursor.execute(db_call)
-            logging.info("{}: record inserted into DB".format(datetime.now()))
+            print("{}: record inserted into DB".format(datetime.now()))
     except pymysql.ProgrammingError as e:
-        logging.info("{}: Exception entering data into database".format(
+        print("{}: Exception entering data into database".format(
             datetime.now()))
-        logging.info("{}: {}".format(datetime.now(), e))
+        print("{}: {}".format(datetime.now(), e))
         raise e
 
 
@@ -192,7 +192,7 @@ def set_db_data_tip(message, users_to_tip, t_index):
     """
     Special case to update DB information to include tip data
     """
-    logging.info("{}: inserting tip into DB.".format(datetime.now()))
+    print("{}: inserting tip into DB.".format(datetime.now()))
     db = pymysql.connect(
         host=DB_HOST,
         user=DB_USER,
@@ -211,6 +211,6 @@ def set_db_data_tip(message, users_to_tip, t_index):
                  users_to_tip[t_index]['receiver_id'], message['text'],
                  Decimal(message['tip_amount'])))
     except Exception as e:
-        logging.info("{}: Exception in set_db_data_tip".format(datetime.now()))
-        logging.info("{}: {}".format(datetime.now(), e))
+        print("{}: Exception in set_db_data_tip".format(datetime.now()))
+        print("{}: {}".format(datetime.now(), e))
         raise e
