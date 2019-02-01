@@ -12,7 +12,7 @@ from . import currency, db, social
 # Set Log File
 logging.basicConfig()
 logging.getLogger(__name__).setLevel(logging.INFO)
-log = logging.getLogger(__name__)
+log = logging.getLogger('werkzeug')
 ch = logging.StreamHandler()
 formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')

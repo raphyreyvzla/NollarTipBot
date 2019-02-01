@@ -13,7 +13,7 @@ from . import currency, db
 # Set Log File
 logging.basicConfig()
 logging.getLogger(__name__).setLevel(logging.INFO)
-log = logging.getLogger(__name__)
+log = logging.getLogger('werkzeug')
 ch = logging.StreamHandler()
 formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -98,8 +98,7 @@ def validate_tip_amount(message):
         return message
 
     try:
-        message['tip_amount_raw'] = Decimal(
-            message['tip_amount']) * 10000000
+        message['tip_amount_raw'] = Decimal(message['tip_amount']) * 10000000
     except Exception as e:
         logging.info(
             "{}: Exception converting tip_amount to tip_amount_raw".format(
@@ -201,8 +200,8 @@ def validate_sender(message):
     currency.receive_pending(message['sender_account'])
     message['sender_balance_raw'] = rpc.account_balance(
         account='{}'.format(message['sender_account']))
-    message['sender_balance'] = message['sender_balance_raw'][
-        'balance'] / 10000000
+    message[
+        'sender_balance'] = message['sender_balance_raw']['balance'] / 10000000
 
     return message
 
