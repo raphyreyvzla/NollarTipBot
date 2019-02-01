@@ -26,7 +26,8 @@ DB_PORT = int(config.get('webhooks', 'port'))
 
 
 def check_db_exist():
-    db = pymysql.connect(host=DB_HOST, user=DB_USER, passwd=DB_PW, port=DB_PORT)
+    db = pymysql.connect(
+        host=DB_HOST, user=DB_USER, passwd=DB_PW, port=DB_PORT)
     with db:
         sql = "SHOW DATABASES LIKE '{}'".format(DB_SCHEMA)
         db_cursor = db.cursor()
@@ -94,6 +95,19 @@ def execute_sql(sql):
         db_cursor.execute(sql)
 
 
+def drop_table(table_name):
+    exist = check_table_exists(table_name)
+    sql = 'DROP TABLE {}'.format(table_name)
+    try:
+        if exist:
+            execute_sql(sql)
+            print('Dropped table {}'.format(table_name))
+        else:
+            print('Table {} does not exist'.format(table_name))
+    except Exception as e:
+        print('Failed dropping table {}, got error {}'.format(table_name, e))
+
+
 def create_tables():
     users_exist = check_table_exists('users')
     if not users_exist:
@@ -114,7 +128,7 @@ def create_tables():
         # create telegram_chat_members table
         sql = """
         CREATE TABLE IF NOT EXISTS telegram_chat_members (
-            chat_id INT,
+            chat_id BIGINT,
             chat_name  CHAR(128),
             member_id INT,  
             member_name CHAR(128))

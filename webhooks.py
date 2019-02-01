@@ -39,6 +39,18 @@ def db_init():
     print('Succesfully initiated database.')
 
 
+@app.cli.command('db_create_tables')
+def db_init():
+    create_tables()
+    print('Successfully created tables.')
+
+
+@app.cli.command('db_drop_table')
+@click.argument('name')
+def db_drop(name):
+    drop_table(name)
+
+
 # Connect to Telegram
 telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 
@@ -94,8 +106,13 @@ def telegram_event(path):
             logging.info("Direct message received in Telegram.  Processing.")
             message['sender_id'] = request_json['message']['from']['id']
 
-            message['sender_screen_name'] = request_json['message']['from'][
-                'username']
+            try:
+                message['sender_screen_name'] = request_json['message'][
+                    'from']['username']
+            except KeyError:
+                message['sender_screen_name'] = request_json['message'][
+                    'from']['first_name']
+
             message['dm_id'] = request_json['update_id']
             message['text'] = request_json['message']['text']
             message['dm_array'] = message['text'].split(" ")
@@ -110,8 +127,14 @@ def telegram_event(path):
               or request_json['message']['chat']['type'] == 'group'):
             if 'text' in request_json['message']:
                 message['sender_id'] = request_json['message']['from']['id']
-                message['sender_screen_name'] = request_json['message'][
-                    'from']['username']
+
+                try:
+                    message['sender_screen_name'] = request_json['message'][
+                        'from']['username']
+                except KeyError:
+                    message['sender_screen_name'] = request_json['message'][
+                        'from']['first_name']
+
                 message['id'] = request_json['message']['message_id']
                 message['chat_id'] = request_json['message']['chat']['id']
                 message['chat_name'] = request_json['message']['chat']['title']
@@ -149,6 +172,7 @@ def telegram_event(path):
                         os._exit(0)
                     else:
                         return '', HTTPStatus.OK
+
             elif 'new_chat_member' in request_json['message']:
                 logging.info("new member joined chat, adding to DB")
                 chat_id = request_json['message']['chat']['id']
