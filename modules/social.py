@@ -13,7 +13,7 @@ from . import currency, db
 # Read config and parse constants
 config = configparser.ConfigParser()
 config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')
-
+logging.basicConfig(handlers=[logging.StreamHandler()], level=logging.INFO)
 # Telegram API
 TELEGRAM_KEY = config.get('webhooks', 'telegram_key')
 
@@ -36,7 +36,7 @@ def send_dm(receiver, message):
     try:
         telegram_bot.sendMessage(chat_id=receiver, text=message)
     except Exception as e:
-        print("{}: Send DM - Telegram ERROR: {}".format(datetime.now(), e))
+        logging.info("{}: Send DM - Telegram ERROR: {}".format(datetime.now(), e))
         pass
 
 
@@ -44,7 +44,7 @@ def check_message_action(message):
     """
     Check to see if there are any key action values mentioned in the message.
     """
-    print("{}: in check_message_action.".format(datetime.now()))
+    logging.info("{}: in check_message_action.".format(datetime.now()))
     try:
         message['action_index'] = message['text'].index("!tip")
     except ValueError:
@@ -61,12 +61,12 @@ def validate_tip_amount(message):
     """
     Validate the message includes an amount to tip, and if that tip amount is greater than the minimum tip amount.
     """
-    print("{}: in validate_tip_amount".format(datetime.now()))
+    logging.info("{}: in validate_tip_amount".format(datetime.now()))
     try:
         message['tip_amount'] = Decimal(
             message['text'][message['starting_point']])
     except Exception:
-        print("{}: Tip amount was not a number: {}".format(
+        logging.info("{}: Tip amount was not a number: {}".format(
             datetime.now(), message['text'][message['starting_point']]))
         not_a_number_text = 'Looks like the value you entered to tip was not a number.  You can try to tip ' \
                             'again using the format !tip 1234 @username'
@@ -82,16 +82,16 @@ def validate_tip_amount(message):
         send_reply(message, min_tip_text)
 
         message['tip_amount'] = -1
-        print("{}: User tipped less than {} Nos.".format(
+        logging.info("{}: User tipped less than {} Nos.".format(
             datetime.now(), MIN_TIP))
         return message
 
     try:
         message['tip_amount_raw'] = Decimal(message['tip_amount']) * 10000000
     except Exception as e:
-        print("{}: Exception converting tip_amount to tip_amount_raw".format(
+        logging.info("{}: Exception converting tip_amount to tip_amount_raw".format(
             datetime.now()))
-        print("{}: {}".format(datetime.now(), e))
+        logging.info("{}: {}".format(datetime.now(), e))
         message['tip_amount'] = -1
         return message
 
@@ -109,9 +109,9 @@ def set_tip_list(message, users_to_tip):
     Loop through the message starting after the tip amount and identify any users that were tagged for a tip.  Add the
     user object to the users_to_tip dict to process the tips.
     """
-    print("{}: in set_tip_list.".format(datetime.now()))
+    logging.info("{}: in set_tip_list.".format(datetime.now()))
 
-    print("trying to set tiplist in telegram: {}".format(message))
+    logging.info("trying to set tiplist in telegram: {}".format(message))
     for t_index in range(message['starting_point'] + 1, len(message['text'])):
         if len(message['text'][t_index]) > 0:
             if str(message['text'][t_index][0]) == "@" and str(
@@ -135,7 +135,7 @@ def set_tip_list(message, users_to_tip):
                     }
                     users_to_tip.append(user_dict)
                 else:
-                    print("User not found in DB: chat ID:{} - member name:{}".
+                    logging.info("User not found in DB: chat ID:{} - member name:{}".
                           format(message['chat_id'],
                                  message['text'][t_index][1:]))
                     missing_user_message = (
@@ -147,7 +147,7 @@ def set_tip_list(message, users_to_tip):
                     users_to_tip.clear()
                     return message, users_to_tip
 
-    print("{}: Users_to_tip: {}".format(datetime.now(), users_to_tip))
+    logging.info("{}: Users_to_tip: {}".format(datetime.now(), users_to_tip))
     message['total_tip_amount'] = message['tip_amount']
     if len(users_to_tip) > 0 and message['tip_amount'] != -1:
         message['total_tip_amount'] *= len(users_to_tip)
@@ -159,8 +159,8 @@ def validate_sender(message):
     """
     Validate that the sender has an account with the tip bot, and has enough NANO to cover the tip.
     """
-    print("{}: validating sender".format(datetime.now()))
-    print("sender id: {}".format(message['sender_id']))
+    logging.info("{}: validating sender".format(datetime.now()))
+    logging.info("sender id: {}".format(message['sender_id']))
     db_call = "SELECT account, register FROM users where user_id = {}".format(
         message['sender_id'])
     sender_account_info = db.get_db_data(db_call)
@@ -171,7 +171,7 @@ def validate_sender(message):
             "an account.")
         send_reply(message, no_account_text)
 
-        print("{}: User tried to send a tip without an account.".format(
+        logging.info("{}: User tried to send a tip without an account.".format(
             datetime.now()))
         message['sender_account'] = None
         return message
@@ -197,7 +197,7 @@ def validate_total_tip_amount(message):
     """
     Validate that the sender has enough Nano to cover the tip to all users
     """
-    print("{}: validating total tip amount".format(datetime.now()))
+    logging.info("{}: validating total tip amount".format(datetime.now()))
     if message['sender_balance_raw']['balance'] < (
             message['total_tip_amount'] * 10000000):
         not_enough_text = (
@@ -206,7 +206,7 @@ def validate_total_tip_amount(message):
                 message['total_tip_amount']))
         send_reply(message, not_enough_text)
 
-        print("{}: User tried to send more than in their account.".format(
+        logging.info("{}: User tried to send more than in their account.".format(
             datetime.now()))
         message['tip_amount'] = -1
         return message
@@ -225,9 +225,9 @@ def check_telegram_member(chat_id, chat_name, member_id, member_name):
             chat_id, member_name))
     user_check_data = db.get_db_data(check_user_call)
 
-    print("checking if user exists")
+    logging.info("checking if user exists")
     if not user_check_data:
-        print("{}: User {}-{} not found in DB, inserting".format(
+        logging.info("{}: User {}-{} not found in DB, inserting".format(
             datetime.now(), chat_id, member_name))
         new_chat_member_call = (
             "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "

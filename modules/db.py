@@ -9,7 +9,7 @@ import pymysql
 # Read config and parse constants
 config = configparser.ConfigParser()
 config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')
-
+logging.basicConfig(handlers=[logging.StreamHandler()], level=logging.INFO)
 # DB connection settings
 DB_HOST = config.get('webhooks', 'host')
 DB_USER = config.get('webhooks', 'user')
@@ -36,7 +36,7 @@ def create_db():
         sql = 'CREATE DATABASE IF NOT EXISTS {}'.format(DB_SCHEMA)
         db_cursor.execute(sql)
         db.commit()
-        print('Created database')
+        logging.info('Created database')
 
 
 def delete_db():
@@ -49,11 +49,11 @@ def delete_db():
                 sql = 'DROP DATABASE {}'.format(DB_SCHEMA)
                 db_cursor.execute(sql)
         else:
-            print('No db')
+            logging.info('No db')
     except Exception as e:
-        print('Failed removing db: {}'.format(e))
+        logging.info('Failed removing db: {}'.format(e))
     else:
-        print('Deleted database.')
+        logging.info('Deleted database.')
     check_db_exist()
 
 
@@ -94,11 +94,11 @@ def drop_table(table_name):
     try:
         if exist:
             execute_sql(sql)
-            print('Dropped table {}'.format(table_name))
+            logging.info('Dropped table {}'.format(table_name))
         else:
-            print('Table {} does not exist'.format(table_name))
+            logging.info('Table {} does not exist'.format(table_name))
     except Exception as e:
-        print('Failed dropping table {}, got error {}'.format(table_name, e))
+        logging.info('Failed dropping table {}, got error {}'.format(table_name, e))
 
 
 def create_tables():
@@ -113,7 +113,7 @@ def create_tables():
             register SMALLINT)
             """
         execute_sql(sql)
-        print("Checking if table was created: {}".format(
+        logging.info("Checking if table was created: {}".format(
             check_table_exists('users')))
 
     users_exist = check_table_exists('telegram_chat_members')
@@ -180,11 +180,11 @@ def set_db_data(db_call):
         with db:
             db_cursor = db.cursor()
             db_cursor.execute(db_call)
-            print("{}: record inserted into DB".format(datetime.now()))
+            logging.info("{}: record inserted into DB".format(datetime.now()))
     except pymysql.ProgrammingError as e:
-        print("{}: Exception entering data into database".format(
+        logging.info("{}: Exception entering data into database".format(
             datetime.now()))
-        print("{}: {}".format(datetime.now(), e))
+        logging.info("{}: {}".format(datetime.now(), e))
         raise e
 
 
@@ -192,7 +192,7 @@ def set_db_data_tip(message, users_to_tip, t_index):
     """
     Special case to update DB information to include tip data
     """
-    print("{}: inserting tip into DB.".format(datetime.now()))
+    logging.info("{}: inserting tip into DB.".format(datetime.now()))
     db = pymysql.connect(
         host=DB_HOST,
         user=DB_USER,
@@ -211,6 +211,6 @@ def set_db_data_tip(message, users_to_tip, t_index):
                  users_to_tip[t_index]['receiver_id'], message['text'],
                  Decimal(message['tip_amount'])))
     except Exception as e:
-        print("{}: Exception in set_db_data_tip".format(datetime.now()))
-        print("{}: {}".format(datetime.now(), e))
+        logging.info("{}: Exception in set_db_data_tip".format(datetime.now()))
+        logging.info("{}: {}".format(datetime.now(), e))
         raise e

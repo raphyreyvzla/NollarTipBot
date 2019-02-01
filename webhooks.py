@@ -11,6 +11,7 @@ from modules.db import *
 # Read config and parse constants
 config = configparser.ConfigParser()
 config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')
+logging.basicConfig(handlers=[logging.StreamHandler()], level=logging.INFO)
 
 # Telegram API
 TELEGRAM_KEY = config.get('webhooks', 'telegram_key')
@@ -18,6 +19,7 @@ TELEGRAM_KEY = config.get('webhooks', 'telegram_key')
 # IDs
 BOT_ID_TELEGRAM = config.get('webhooks', 'bot_id_telegram')
 SERVER_URL = config.get('webhooks', 'server_url')
+
 
 # Set up Flask routing
 app = Flask(__name__)
@@ -29,13 +31,13 @@ def db_init():
     delete_db()
     create_db()
     create_tables()
-    print('Succesfully initiated database.')
+    logging.info('Succesfully initiated database.')
 
 
 @app.cli.command('db_create_tables')
 def db_init():
     create_tables()
-    print('Successfully created tables.')
+    logging.info('Successfully created tables.')
 
 
 @app.cli.command('db_drop_table')
@@ -53,9 +55,9 @@ def telegram_webhook():
     # 443, 80, 88, 8443
     response = telegram_bot.setWebhook(SERVER_URL)
     if response:
-        print("Webhook setup successfully")
+        logging.info("Webhook setup successfully")
     else:
-        print("Error {}".format(response))
+        logging.info("Error {}".format(response))
     return response
 
 
@@ -92,11 +94,11 @@ def telegram_event(path):
     ]
 
     request_json = request.get_json()
-    print("request_json: {}".format(request_json))
+    logging.info("request_json: {}".format(request_json))
 
     if 'message' in request_json.keys():
         if request_json['message']['chat']['type'] == 'private':
-            print("Direct message received in Telegram.  Processing.")
+            logging.info("Direct message received in Telegram.  Processing.")
             message['sender_id'] = request_json['message']['from']['id']
 
             try:
@@ -111,8 +113,8 @@ def telegram_event(path):
             message['dm_array'] = message['text'].split(" ")
             message['dm_action'] = message['dm_array'][0].lower()
 
-            print("{}: action identified: {}".format(datetime.now(),
-                                                     message['dm_action']))
+            logging.info("{}: action identified: {}".format(
+                datetime.now(), message['dm_action']))
 
             parse_action(message)
 
@@ -143,7 +145,7 @@ def telegram_event(path):
 
                 message = check_message_action(message)
                 if message['action'] is None:
-                    print(
+                    logging.info(
                         "{}: Mention of nano tip bot without a !tip command.".
                         format(datetime.now()))
                     return '', HTTPStatus.OK
@@ -159,7 +161,7 @@ def telegram_event(path):
                         try:
                             tip_process(message, users_to_tip)
                         except Exception as e:
-                            print("Exception: {}".format(e))
+                            logging.info("Exception: {}".format(e))
                             raise e
 
                         os._exit(0)
@@ -167,7 +169,7 @@ def telegram_event(path):
                         return '', HTTPStatus.OK
 
             elif 'new_chat_member' in request_json['message']:
-                print("new member joined chat, adding to DB")
+                logging.info("new member joined chat, adding to DB")
                 chat_id = request_json['message']['chat']['id']
                 chat_name = request_json['message']['chat']['title']
                 member_id = request_json['message']['new_chat_member']['id']
@@ -186,8 +188,9 @@ def telegram_event(path):
                 member_id = request_json['message']['left_chat_member']['id']
                 member_name = request_json['message']['left_chat_member'][
                     'username']
-                print("member {}-{} left chat {}-{}, removing from DB.".format(
-                    member_id, member_name, chat_id, chat_name))
+                logging.info(
+                    "member {}-{} left chat {}-{}, removing from DB.".format(
+                        member_id, member_name, chat_id, chat_name))
 
                 remove_member_call = (
                     "DELETE FROM telegram_chat_members "
@@ -200,8 +203,9 @@ def telegram_event(path):
                 chat_name = request_json['message']['chat']['title']
                 member_id = request_json['message']['from']['id']
                 member_name = request_json['message']['from']['username']
-                print("member {} created chat {}, inserting creator into DB.".
-                      format(member_name, chat_name))
+                logging.info(
+                    "member {} created chat {}, inserting creator into DB.".
+                    format(member_name, chat_name))
 
                 new_chat_call = (
                     "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
@@ -210,7 +214,7 @@ def telegram_event(path):
                 set_db_data(new_chat_call)
 
         else:
-            print("request: {}".format(request_json))
+            logging.info("request: {}".format(request_json))
 
     return 'ok'
 
