@@ -129,24 +129,20 @@ def help_process(message):
     Reply to the sender with help commands
     """
     help_message = (
-        "Thank you for using the Nos Tip Bot!  Below is a list of commands, and a description of what they do:\n\n"
+        "Thank you for using my services @NOSTipBot!  Below is a list of commands, and a description of how you can interact with me:\n\n"
         + BULLET +
-        " !help: The tip bot will respond to your DM with a list of commands and their functions. If you"
-        " forget something, use this to get a hint of how to do it!\n\n" +
-        BULLET +
-        " !register: Registers your twitter ID for an account that is tied to it.  This is used to store"
-        " your tips. Make sure to withdraw to a private wallet, as the tip bot is not meant to be a "
-        "long term storage device for Nos.\n\n" + BULLET +
-        " !balance: This returns the balance of your account.\n\n" + BULLET +
-        " !tip: Tips are sent through public messages.  Tag @NanoTipBot and mention !tip "
-        "<amount> <@username>.  Example: @NanoTipBot !tip 1 @user would send a 1 Nos tip to user "
-        "@user.\n\n" + BULLET +
-        " !account: Returns the account number.  You can use this to"
-        " deposit more Nos to tip from your personal wallet.\n\n" + BULLET +
-        " !withdraw: Proper usage is !withdraw nos_12345.  This will send the full balance of your tip "
-        "account to the provided Nos account.  Optional: You can include an amount to withdraw by "
-        "sending !withdraw <amount> <address>.  Example: !withdraw 1 nos_123 would "
-        "withdraw 1 Nos to account nos_123.\n\n")
+        " !help: The NOSTipBot will respond to your DM with a list of commands and their functions. If you forget something, use this to get a hint of how to do it!n\n\n"
+        + BULLET +
+        " !register: Creates a fresh NOS (XNOS) account address specifically for you.  This is used to store your tips. Make sure to withdraw to a private wallet, as the tip bot is not meant to be a long term storage device for NOS (XNOS).\n\n"
+        + BULLET +
+        " !balance: This shows you how much funds are in your your account.\n\n"
+        + BULLET +
+        " !tip: Tips are sent directly to @username on telegram.  Tag @NOSTipBot and mention !tip <amount> <@username>.  EXAMPLE: @NOSTipBot !tip 1 @user will send a 1 NOS (XNOS) tip to another user.\n\n"
+        + BULLET +
+        " !account: Returns the account number.  You can use this to deposit more NOS (XNOS) to tip from your personal wallet.\n\n"
+        + BULLET +
+        " !withdraw: Proper usage is !withdraw nos_12345.  This will send the full balance of your tip account to another external NOS (XNOS) account.  Optional: You can include an amount to withdraw by sending !withdraw <amount> <address>.  Example: !withdraw 1 nos_123 would withdraw 1 Nos to account nos_123\n\n"
+    )
     social.send_dm(message['sender_id'], help_message)
     logging.info("{}: Help message sent!".format(datetime.now()))
 
