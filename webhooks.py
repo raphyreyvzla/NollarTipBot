@@ -88,12 +88,14 @@ def telegram_event(path):
 
     request_json = request.get_json()
     logging.info("request_json: {}".format(request_json))
+
     if 'message' in request_json.keys():
         if request_json['message']['chat']['type'] == 'private':
             logging.info("Direct message received in Telegram.  Processing.")
             message['sender_id'] = request_json['message']['from']['id']
 
-            # message['sender_screen_name'] = request_json['message']['from']['username']
+            message['sender_screen_name'] = request_json['message']['from'][
+                'username']
             message['dm_id'] = request_json['update_id']
             message['text'] = request_json['message']['text']
             message['dm_array'] = message['text'].split(" ")

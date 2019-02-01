@@ -188,8 +188,7 @@ def balance_process(message):
         balance_return = rpc.account_balance(
             account="{}".format(message['sender_account']))
         message['sender_balance_raw'] = balance_return['balance']
-        message['sender_balance'] = balance_return[
-            'balance'] / 10000000
+        message['sender_balance'] = balance_return['balance'] / 10000000
 
         balance_text = "Your balance is {} Nos.".format(
             message['sender_balance'])
@@ -256,6 +255,7 @@ def account_process(message):
     If the user sends !account command, reply with their account.  If there is no account, create one, register it
     and reply to the user.
     """
+
     logging.info("{}: In account process.".format(datetime.now()))
     sender_account_call = (
         "SELECT account, register FROM users WHERE user_id = {}".format(
@@ -357,8 +357,7 @@ def withdraw_process(message):
                         social.send_dm(message['sender_id'],
                                        invalid_amount_text)
                         return
-                    withdraw_amount_raw = int(
-                        withdraw_amount * 10000000)
+                    withdraw_amount_raw = int(withdraw_amount * 10000000)
                     if Decimal(withdraw_amount_raw) > Decimal(
                             balance_return['balance']):
                         not_enough_balance_text = (
@@ -369,8 +368,7 @@ def withdraw_process(message):
                         return
                 else:
                     withdraw_amount_raw = balance_return['balance']
-                    withdraw_amount = balance_return[
-                        'balance'] / 10000000
+                    withdraw_amount = balance_return['balance'] / 10000000
                 # send the total balance to the provided account
                 work = currency.get_pow(sender_account)
                 if work == '':
