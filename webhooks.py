@@ -46,7 +46,7 @@ telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 @app.cli.command('telegram_webhook')
 def telegram_webhook():
     # 443, 80, 88, 8443
-    response = telegram_bot.setWebhook(SERVER_URL + 'telegram')
+    response = telegram_bot.setWebhook(SERVER_URL)
     if response:
         print("Webhook setup successfully")
     else:
@@ -55,7 +55,8 @@ def telegram_webhook():
 
 
 # Flask routing
-@app.route('/telegram', methods=["POST"])
+@app.route('/', defaults={'path': ''}, methods=["POST"])
+@app.route('/<path:path>', methods=["POST"])
 def telegram_event():
     message = {
         # id:                     ID of the received message - Error logged through None value
