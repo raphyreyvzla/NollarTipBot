@@ -104,8 +104,10 @@ def telegram_event(path):
                 message['sender_screen_name'] = request_json['message'][
                     'from']['username']
             except KeyError:
-                first_name = request_json['message']['from'].get('first_name')
-                last_name = request_json['message']['from'].get('last_name')
+                first_name = request_json['message']['from'].get(
+                    'first_name', '')
+                last_name = request_json['message']['from'].get(
+                    'last_name', '')
                 member_name = first_name + '_' + last_name
                 message['sender_screen_name'] = member_name
 
@@ -128,8 +130,10 @@ def telegram_event(path):
                     message['sender_screen_name'] = request_json['message'][
                         'from']['username']
                 except KeyError:
-                    first_name = request_json['message']['from'].get('first_name')
-                    last_name = request_json['message']['from'].get('last_name')
+                    first_name = request_json['message']['from'].get(
+                        'first_name', '')
+                    last_name = request_json['message']['from'].get(
+                        'last_name', '')
                     member_name = first_name + '_' + last_name
                     message['sender_screen_name'] = member_name
 
@@ -180,9 +184,9 @@ def telegram_event(path):
                     'username')
                 if not member_name:
                     first_name = request_json['message'][
-                        'new_chat_member'].get('first_name')
+                        'new_chat_member'].get('first_name', '')
                     last_name = request_json['message']['new_chat_member'].get(
-                        'last_name')
+                        'last_name', '')
                     member_name = first_name + '_' + last_name
 
                 new_chat_member_call = (
@@ -199,9 +203,9 @@ def telegram_event(path):
                     'username']
                 if not member_name:
                     first_name = request_json['message'][
-                        'new_chat_member'].get('first_name')
+                        'new_chat_member'].get('first_name', '')
                     last_name = request_json['message']['new_chat_member'].get(
-                        'last_name')
+                        'last_name', '')
                     member_name = first_name + '_' + last_name
                 logging.info(
                     "member {}-{} left chat {}-{}, removing from DB.".format(
@@ -220,9 +224,9 @@ def telegram_event(path):
                 member_name = request_json['message']['from']['username']
                 if not member_name:
                     first_name = request_json['message'][
-                        'new_chat_member'].get('first_name')
+                        'new_chat_member'].get('first_name', '')
                     last_name = request_json['message']['new_chat_member'].get(
-                        'last_name')
+                        'last_name', '')
                     member_name = first_name + '_' + last_name
                 logging.info(
                     "member {} created chat {}, inserting creator into DB.".
