@@ -104,8 +104,10 @@ def telegram_event(path):
                 message['sender_screen_name'] = request_json['message'][
                     'from']['username']
             except KeyError:
-                message['sender_screen_name'] = request_json['message'][
-                    'from']['first_name']
+                first_name = request_json['message']['from'].get('first_name')
+                last_name = request_json['message']['from'].get('last_name')
+                member_name = first_name + '_' + last_name
+                message['sender_screen_name'] = member_name
 
             message['dm_id'] = request_json['update_id']
             message['text'] = request_json['message']['text']
@@ -117,18 +119,6 @@ def telegram_event(path):
 
             parse_action(message)
 
-    # personal:
-    # INFO:root:request_json: {'update_id': 991526597, 'message': {'message_id': 161,
-    #  'from': {'id': 185519199, 'is_bot': False, 'first_name': 'Paweł', 'last_name': 'Buglewicz',
-    #  'username': 'IllMODED', 'language_code': 'pl'}, 'chat': {'id': 185519199, 'first_name': 'Paweł',
-    # 'last_name': 'Buglewicz', 'username': 'IllMODED', 'type': 'private'}, 'date': 1549028343,
-    # 'text': '/balance', 'entities': [{'offset': 0, 'length': 8, 'type': 'bot_command'}]}}
-
-    # inline
-    # INFO:root:request_json: {'update_id': 991526595, 'inline_query': {'id': '796798893204303034',
-    #  'from': {'id': 185519199, 'is_bot': False, 'first_name': 'Paweł', 'last_name': 'Buglewicz',
-    #  'username': 'IllMODED', 'language_code': 'pl'}, 'query': '!tip 1 @massi_nos', 'offset': ''}}
-
         elif (request_json['message']['chat']['type'] == 'supergroup'
               or request_json['message']['chat']['type'] == 'group'):
             if 'text' in request_json['message']:
@@ -138,8 +128,10 @@ def telegram_event(path):
                     message['sender_screen_name'] = request_json['message'][
                         'from']['username']
                 except KeyError:
-                    message['sender_screen_name'] = request_json['message'][
-                        'from']['first_name']
+                    first_name = request_json['message']['from'].get('first_name')
+                    last_name = request_json['message']['from'].get('last_name')
+                    member_name = first_name + '_' + last_name
+                    message['sender_screen_name'] = member_name
 
                 message['id'] = request_json['message']['message_id']
                 message['chat_id'] = request_json['message']['chat']['id']
@@ -184,8 +176,14 @@ def telegram_event(path):
                 chat_id = request_json['message']['chat']['id']
                 chat_name = request_json['message']['chat']['title']
                 member_id = request_json['message']['new_chat_member']['id']
-                member_name = request_json['message']['new_chat_member'][
-                    'username']
+                member_name = request_json['message']['new_chat_member'].get(
+                    'username')
+                if not member_name:
+                    first_name = request_json['message'][
+                        'new_chat_member'].get('first_name')
+                    last_name = request_json['message']['new_chat_member'].get(
+                        'last_name')
+                    member_name = first_name + '_' + last_name
 
                 new_chat_member_call = (
                     "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
@@ -199,6 +197,12 @@ def telegram_event(path):
                 member_id = request_json['message']['left_chat_member']['id']
                 member_name = request_json['message']['left_chat_member'][
                     'username']
+                if not member_name:
+                    first_name = request_json['message'][
+                        'new_chat_member'].get('first_name')
+                    last_name = request_json['message']['new_chat_member'].get(
+                        'last_name')
+                    member_name = first_name + '_' + last_name
                 logging.info(
                     "member {}-{} left chat {}-{}, removing from DB.".format(
                         member_id, member_name, chat_id, chat_name))
@@ -214,6 +218,12 @@ def telegram_event(path):
                 chat_name = request_json['message']['chat']['title']
                 member_id = request_json['message']['from']['id']
                 member_name = request_json['message']['from']['username']
+                if not member_name:
+                    first_name = request_json['message'][
+                        'new_chat_member'].get('first_name')
+                    last_name = request_json['message']['new_chat_member'].get(
+                        'last_name')
+                    member_name = first_name + '_' + last_name
                 logging.info(
                     "member {} created chat {}, inserting creator into DB.".
                     format(member_name, chat_name))
