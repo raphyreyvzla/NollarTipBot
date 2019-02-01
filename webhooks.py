@@ -8,7 +8,6 @@ from modules.orchestration import *
 from modules.social import *
 from modules.db import *
 
-
 # Read config and parse constants
 config = configparser.ConfigParser()
 config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')
@@ -22,6 +21,7 @@ SERVER_URL = config.get('webhooks', 'server_url')
 
 # Set up Flask routing
 app = Flask(__name__)
+
 
 @app.before_first_request
 def setup_logging():
@@ -118,8 +118,8 @@ def telegram_event(path):
             message['dm_array'] = message['text'].split(" ")
             message['dm_action'] = message['dm_array'][0].lower()
 
-            print("{}: action identified: {}".format(
-                datetime.now(), message['dm_action']))
+            print("{}: action identified: {}".format(datetime.now(),
+                                                     message['dm_action']))
 
             parse_action(message)
 
@@ -193,9 +193,8 @@ def telegram_event(path):
                 member_id = request_json['message']['left_chat_member']['id']
                 member_name = request_json['message']['left_chat_member'][
                     'username']
-                print(
-                    "member {}-{} left chat {}-{}, removing from DB.".format(
-                        member_id, member_name, chat_id, chat_name))
+                print("member {}-{} left chat {}-{}, removing from DB.".format(
+                    member_id, member_name, chat_id, chat_name))
 
                 remove_member_call = (
                     "DELETE FROM telegram_chat_members "
@@ -208,9 +207,8 @@ def telegram_event(path):
                 chat_name = request_json['message']['chat']['title']
                 member_id = request_json['message']['from']['id']
                 member_name = request_json['message']['from']['username']
-                print(
-                    "member {} created chat {}, inserting creator into DB.".
-                    format(member_name, chat_name))
+                print("member {} created chat {}, inserting creator into DB.".
+                      format(member_name, chat_name))
 
                 new_chat_call = (
                     "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "

@@ -160,9 +160,8 @@ def balance_process(message):
             message['sender_id']))
     data = db.get_db_data(balance_call)
     if not data:
-        print(
-            "{}: User tried to check balance without an account".format(
-                datetime.now()))
+        print("{}: User tried to check balance without an account".format(
+            datetime.now()))
         balance_message = (
             "There is no account linked to your username.  Please respond with !register to "
             "create an account.")
@@ -227,9 +226,8 @@ def register_process(message):
         social.send_account_message(account_registration_text, message,
                                     sender_account)
 
-        print(
-            "{}: User has an account, but needed to register.  Message sent".
-            format(datetime.now()))
+        print("{}: User has an account, but needed to register.  Message sent".
+              format(datetime.now()))
 
     else:
         # The user had an account and already registered, so let them know their account.
@@ -238,9 +236,8 @@ def register_process(message):
         social.send_account_message(account_already_registered, message,
                                     sender_account)
 
-        print(
-            "{}: User has a registered account.  Message sent.".format(
-                datetime.now()))
+        print("{}: User has a registered account.  Message sent.".format(
+            datetime.now()))
 
 
 def account_process(message):
@@ -267,8 +264,7 @@ def account_process(message):
         account_text = "You didn't have an account set up, so I set one up for you.  Your account number is:"
         social.send_account_message(account_text, message, sender_account)
 
-        print("{}: Created an account for the user!".format(
-            datetime.now()))
+        print("{}: Created an account for the user!".format(datetime.now()))
 
     else:
         sender_account = account_data[0][0]
@@ -283,8 +279,7 @@ def account_process(message):
         account_text = "Your account number is:"
         social.send_account_message(account_text, message, sender_account)
 
-        print("{}: Sent the user their account number.".format(
-            datetime.now()))
+        print("{}: Sent the user their account number.".format(datetime.now()))
 
 
 def withdraw_process(message):
@@ -323,18 +318,16 @@ def withdraw_process(message):
                     "The account number you provided is invalid.  Please double check and "
                     "resend your request.")
                 social.send_dm(message['sender_id'], invalid_account_text)
-                print(
-                    "{}: The xrb account number is invalid: {}".format(
-                        datetime.now(), receiver_account))
+                print("{}: The xrb account number is invalid: {}".format(
+                    datetime.now(), receiver_account))
 
             elif balance_return['balance'] == 0:
                 no_balance_text = (
                     "You have 0 balance in your account.  Please deposit to your address {} to "
                     "send more tips!".format(sender_account))
                 social.send_dm(message['sender_id'], no_balance_text)
-                print(
-                    "{}: The user tried to withdraw with 0 balance".format(
-                        datetime.now()))
+                print("{}: The user tried to withdraw with 0 balance".format(
+                    datetime.now()))
 
             else:
                 if len(message['dm_array']) == 3:
@@ -365,8 +358,7 @@ def withdraw_process(message):
                 # send the total balance to the provided account
                 work = currency.get_pow(sender_account)
                 if work == '':
-                    print("{}: processed without work".format(
-                        datetime.now()))
+                    print("{}: processed without work".format(datetime.now()))
                     send_hash = rpc.send(
                         wallet="{}".format(WALLET),
                         source="{}".format(sender_account),
@@ -381,8 +373,7 @@ def withdraw_process(message):
                         destination="{}".format(receiver_account),
                         amount=withdraw_amount_raw,
                         work=work)
-                print("{}: send_hash = {}".format(
-                    datetime.now(), send_hash))
+                print("{}: send_hash = {}".format(datetime.now(), send_hash))
                 # respond that the withdraw has been processed
                 withdraw_text = ("You have successfully withdrawn {} Nos!".
                                  format(withdraw_amount))

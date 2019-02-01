@@ -34,8 +34,7 @@ def receive_pending(sender_account):
             for block in pending_blocks:
                 work = get_pow(sender_account)
                 if work == '':
-                    print("{}: processing without pow".format(
-                        datetime.now()))
+                    print("{}: processing without pow".format(datetime.now()))
                     receive_data = {
                         'action': "receive",
                         'wallet': WALLET,
@@ -43,8 +42,7 @@ def receive_pending(sender_account):
                         'block': block
                     }
                 else:
-                    print("{}: processing with pow".format(
-                        datetime.now()))
+                    print("{}: processing with pow".format(datetime.now()))
                     receive_data = {
                         'action': "receive",
                         'wallet': WALLET,
@@ -54,8 +52,7 @@ def receive_pending(sender_account):
                     }
                 receive_json = json.dumps(receive_data)
                 requests.post('{}'.format(NODE_IP), data=receive_json)
-                print("{}: block {} received".format(
-                    datetime.now(), block))
+                print("{}: block {} received".format(datetime.now(), block))
 
         else:
             print('{}: No blocks to receive.'.format(datetime.now()))
@@ -77,8 +74,7 @@ def get_pow(sender_account):
             accounts=["{}".format(sender_account)])
         frontier_hash = account_frontiers[sender_account]
     except Exception as e:
-        print("{}: Error checking frontier: {}".format(
-            datetime.now(), e))
+        print("{}: Error checking frontier: {}".format(datetime.now(), e))
         return ''
     print("account_frontiers: {}".format(account_frontiers))
 
@@ -89,8 +85,7 @@ def get_pow(sender_account):
             work = rpc.work_generate(frontier_hash)
             print("{}: Work generated: {}".format(datetime.now(), work))
         except Exception as e:
-            print("{}: ERROR GENERATING WORK: {}".format(
-                datetime.now(), e))
+            print("{}: ERROR GENERATING WORK: {}".format(datetime.now(), e))
             pass
 
     return work

@@ -36,8 +36,7 @@ def send_dm(receiver, message):
     try:
         telegram_bot.sendMessage(chat_id=receiver, text=message)
     except Exception as e:
-        print("{}: Send DM - Telegram ERROR: {}".format(
-            datetime.now(), e))
+        print("{}: Send DM - Telegram ERROR: {}".format(datetime.now(), e))
         pass
 
 
@@ -90,9 +89,8 @@ def validate_tip_amount(message):
     try:
         message['tip_amount_raw'] = Decimal(message['tip_amount']) * 10000000
     except Exception as e:
-        print(
-            "{}: Exception converting tip_amount to tip_amount_raw".format(
-                datetime.now()))
+        print("{}: Exception converting tip_amount to tip_amount_raw".format(
+            datetime.now()))
         print("{}: {}".format(datetime.now(), e))
         message['tip_amount'] = -1
         return message
@@ -137,10 +135,9 @@ def set_tip_list(message, users_to_tip):
                     }
                     users_to_tip.append(user_dict)
                 else:
-                    print(
-                        "User not found in DB: chat ID:{} - member name:{}".
-                        format(message['chat_id'],
-                               message['text'][t_index][1:]))
+                    print("User not found in DB: chat ID:{} - member name:{}".
+                          format(message['chat_id'],
+                                 message['text'][t_index][1:]))
                     missing_user_message = (
                         "{} not found in our records.  In order to tip them, they need to be a "
                         "member of the channel.  If they are in the channel, please have them "
@@ -209,9 +206,8 @@ def validate_total_tip_amount(message):
                 message['total_tip_amount']))
         send_reply(message, not_enough_text)
 
-        print(
-            "{}: User tried to send more than in their account.".format(
-                datetime.now()))
+        print("{}: User tried to send more than in their account.".format(
+            datetime.now()))
         message['tip_amount'] = -1
         return message
 
