@@ -57,7 +57,7 @@ def telegram_webhook():
 # Flask routing
 @app.route('/', defaults={'path': ''}, methods=["POST"])
 @app.route('/<path:path>', methods=["POST"])
-def telegram_event():
+def telegram_event(path):
     message = {
         # id:                     ID of the received message - Error logged through None value
         # text:                   A list containing the text of the received message, split by ' '
