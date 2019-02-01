@@ -26,6 +26,8 @@ telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 
 # Connect to node
 rpc = nano.rpc.Client(NODE_IP)
+raw_denominator = 10**13
+
 
 def send_dm(receiver, message):
     """
@@ -35,7 +37,8 @@ def send_dm(receiver, message):
     try:
         telegram_bot.sendMessage(chat_id=receiver, text=message)
     except Exception as e:
-        logging.info("{}: Send DM - Telegram ERROR: {}".format(datetime.now(), e))
+        logging.info("{}: Send DM - Telegram ERROR: {}".format(
+            datetime.now(), e))
         pass
 
 
@@ -86,10 +89,12 @@ def validate_tip_amount(message):
         return message
 
     try:
-        message['tip_amount_raw'] = Decimal(message['tip_amount']) * 10000000
+        message['tip_amount_raw'] = Decimal(
+            message['tip_amount']) * raw_denominator
     except Exception as e:
-        logging.info("{}: Exception converting tip_amount to tip_amount_raw".format(
-            datetime.now()))
+        logging.info(
+            "{}: Exception converting tip_amount to tip_amount_raw".format(
+                datetime.now()))
         logging.info("{}: {}".format(datetime.now(), e))
         message['tip_amount'] = -1
         return message
@@ -134,9 +139,10 @@ def set_tip_list(message, users_to_tip):
                     }
                     users_to_tip.append(user_dict)
                 else:
-                    logging.info("User not found in DB: chat ID:{} - member name:{}".
-                          format(message['chat_id'],
-                                 message['text'][t_index][1:]))
+                    logging.info(
+                        "User not found in DB: chat ID:{} - member name:{}".
+                        format(message['chat_id'],
+                               message['text'][t_index][1:]))
                     missing_user_message = (
                         "{} not found in our records.  In order to tip them, they need to be a "
                         "member of the channel.  If they are in the channel, please have them "
@@ -186,8 +192,8 @@ def validate_sender(message):
     currency.receive_pending(message['sender_account'])
     message['sender_balance_raw'] = rpc.account_balance(
         account='{}'.format(message['sender_account']))
-    message[
-        'sender_balance'] = message['sender_balance_raw']['balance'] / 10000000
+    message['sender_balance'] = message['sender_balance_raw'][
+        'balance'] / raw_denominator
 
     return message
 
@@ -198,15 +204,16 @@ def validate_total_tip_amount(message):
     """
     logging.info("{}: validating total tip amount".format(datetime.now()))
     if message['sender_balance_raw']['balance'] < (
-            message['total_tip_amount'] * 10000000):
+            message['total_tip_amount'] * raw_denominator):
         not_enough_text = (
             "You do not have enough Nos to cover this {} Nos tip.  Please check your balance by "
             "sending a DM to me with !balance and retry.".format(
                 message['total_tip_amount']))
         send_reply(message, not_enough_text)
 
-        logging.info("{}: User tried to send more than in their account.".format(
-            datetime.now()))
+        logging.info(
+            "{}: User tried to send more than in their account.".format(
+                datetime.now()))
         message['tip_amount'] = -1
         return message
 

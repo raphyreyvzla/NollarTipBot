@@ -21,6 +21,7 @@ MIN_TIP = config.get('webhooks', 'min_tip')
 
 # Connect to global functions
 rpc = nano.rpc.Client(NODE_IP)
+raw_denominator = 10**13
 
 
 def parse_action(message):
@@ -160,8 +161,9 @@ def balance_process(message):
             message['sender_id']))
     data = db.get_db_data(balance_call)
     if not data:
-        logging.info("{}: User tried to check balance without an account".format(
-            datetime.now()))
+        logging.info(
+            "{}: User tried to check balance without an account".format(
+                datetime.now()))
         balance_message = (
             "There is no account linked to your username.  Please respond with !register to "
             "create an account.")
@@ -180,7 +182,7 @@ def balance_process(message):
         balance_return = rpc.account_balance(
             account="{}".format(message['sender_account']))
         message['sender_balance_raw'] = balance_return['balance']
-        message['sender_balance'] = balance_return['balance'] / 10000000
+        message['sender_balance'] = balance_return['balance'] / raw_denominator
 
         balance_text = "Your balance is {} Nos.".format(
             message['sender_balance'])
@@ -226,8 +228,9 @@ def register_process(message):
         social.send_account_message(account_registration_text, message,
                                     sender_account)
 
-        logging.info("{}: User has an account, but needed to register.  Message sent".
-              format(datetime.now()))
+        logging.info(
+            "{}: User has an account, but needed to register.  Message sent".
+            format(datetime.now()))
 
     else:
         # The user had an account and already registered, so let them know their account.
@@ -236,8 +239,9 @@ def register_process(message):
         social.send_account_message(account_already_registered, message,
                                     sender_account)
 
-        logging.info("{}: User has a registered account.  Message sent.".format(
-            datetime.now()))
+        logging.info(
+            "{}: User has a registered account.  Message sent.".format(
+                datetime.now()))
 
 
 def account_process(message):
@@ -264,7 +268,8 @@ def account_process(message):
         account_text = "You didn't have an account set up, so I set one up for you.  Your account number is:"
         social.send_account_message(account_text, message, sender_account)
 
-        logging.info("{}: Created an account for the user!".format(datetime.now()))
+        logging.info("{}: Created an account for the user!".format(
+            datetime.now()))
 
     else:
         sender_account = account_data[0][0]
@@ -279,7 +284,8 @@ def account_process(message):
         account_text = "Your account number is:"
         social.send_account_message(account_text, message, sender_account)
 
-        logging.info("{}: Sent the user their account number.".format(datetime.now()))
+        logging.info("{}: Sent the user their account number.".format(
+            datetime.now()))
 
 
 def withdraw_process(message):
@@ -318,16 +324,18 @@ def withdraw_process(message):
                     "The account number you provided is invalid.  Please double check and "
                     "resend your request.")
                 social.send_dm(message['sender_id'], invalid_account_text)
-                logging.info("{}: The xrb account number is invalid: {}".format(
-                    datetime.now(), receiver_account))
+                logging.info(
+                    "{}: The xrb account number is invalid: {}".format(
+                        datetime.now(), receiver_account))
 
             elif balance_return['balance'] == 0:
                 no_balance_text = (
                     "You have 0 balance in your account.  Please deposit to your address {} to "
                     "send more tips!".format(sender_account))
                 social.send_dm(message['sender_id'], no_balance_text)
-                logging.info("{}: The user tried to withdraw with 0 balance".format(
-                    datetime.now()))
+                logging.info(
+                    "{}: The user tried to withdraw with 0 balance".format(
+                        datetime.now()))
 
             else:
                 if len(message['dm_array']) == 3:
@@ -343,7 +351,8 @@ def withdraw_process(message):
                         social.send_dm(message['sender_id'],
                                        invalid_amount_text)
                         return
-                    withdraw_amount_raw = int(withdraw_amount * 10000000)
+                    withdraw_amount_raw = int(
+                        withdraw_amount * raw_denominator)
                     if Decimal(withdraw_amount_raw) > Decimal(
                             balance_return['balance']):
                         not_enough_balance_text = (
@@ -354,11 +363,13 @@ def withdraw_process(message):
                         return
                 else:
                     withdraw_amount_raw = balance_return['balance']
-                    withdraw_amount = balance_return['balance'] / 10000000
+                    withdraw_amount = balance_return[
+                        'balance'] / raw_denominator
                 # send the total balance to the provided account
                 work = currency.get_pow(sender_account)
                 if work == '':
-                    logging.info("{}: processed without work".format(datetime.now()))
+                    logging.info("{}: processed without work".format(
+                        datetime.now()))
                     send_hash = rpc.send(
                         wallet="{}".format(WALLET),
                         source="{}".format(sender_account),
@@ -373,7 +384,8 @@ def withdraw_process(message):
                         destination="{}".format(receiver_account),
                         amount=withdraw_amount_raw,
                         work=work)
-                logging.info("{}: send_hash = {}".format(datetime.now(), send_hash))
+                logging.info("{}: send_hash = {}".format(
+                    datetime.now(), send_hash))
                 # respond that the withdraw has been processed
                 withdraw_text = ("You have successfully withdrawn {} Nos!".
                                  format(withdraw_amount))

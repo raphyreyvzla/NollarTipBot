@@ -20,6 +20,7 @@ NODE_IP = config.get('webhooks', 'node_ip')
 
 # Connect to Nano node
 rpc = nano.rpc.Client(NODE_IP)
+raw_denominator = 10**13
 
 
 def receive_pending(sender_account):
@@ -171,8 +172,8 @@ def send_tip(message, users_to_tip, tip_index):
         receive_pending(users_to_tip[tip_index]['receiver_account'])
         balance_return = rpc.account_balance(
             account="{}".format(users_to_tip[tip_index]['receiver_account']))
-        users_to_tip[tip_index]['balance'] = balance_return['balance'] / (10**
-                                                                          10)
+        users_to_tip[tip_index][
+            'balance'] = balance_return['balance'] / raw_denominator
 
         # create a string to remove scientific notation from small decimal tips
         if str(users_to_tip[tip_index]['balance'])[0] == ".":
