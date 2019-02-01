@@ -26,7 +26,7 @@ telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 
 # Connect to node
 rpc = nano.rpc.Client(NODE_IP)
-raw_denominator = 10**13
+raw_denominator = 10**10
 
 
 def send_dm(receiver, message):
