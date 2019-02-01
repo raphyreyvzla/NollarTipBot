@@ -9,11 +9,14 @@ from modules.social import *
 from modules.db import *
 
 # Set Log File
-logging.basicConfig(
-    handlers=[
-        logging.FileHandler(os.environ['MY_LOG_DIR'] + '/webhooks.log', 'a')
-    ],
-    level=logging.INFO)
+logging.basicConfig()
+logging.getLogger(__name__).setLevel(logging.INFO)
+log = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+log.addHandler(ch)
 
 # Read config and parse constants
 config = configparser.ConfigParser()
