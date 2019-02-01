@@ -204,15 +204,17 @@ def set_db_data_tip(message, users_to_tip, t_index):
     try:
         with db:
             db_cursor = db.cursor()
-            message_text = ' '.join(message['text']).replace('!', '').replace(
-                '@', '')
+            message_text = ' '.join(message['text']).replace('!', '').replace('@', '')
             sql = "INSERT INTO tip_list (dm_id, tx_id, processed, sender_id, receiver_id, dm_text, amount) VALUES ({dm_id}, {tx_id}, 2, {sender_id}, {receiver_id}, {dm_text}, {amount})".format(
-                message['id'], message['tip_id'], message['sender_id'],
-                users_to_tip[t_index]['receiver_id'], message_text,
-                Decimal(message['tip_amount']))
+                dm_id=message['id'],
+                tx_id=message['tip_id'],
+                sender_id=message['sender_id'],
+                receiver_id=users_to_tip[t_index]['receiver_id'],
+                dm_text=message_text,
+                amount=Decimal(message['tip_amount']))
+            logging.info('Query: {}'.format(sql))
             db_cursor.execute(sql)
     except Exception as e:
         logging.info("{}: Exception in set_db_data_tip".format(datetime.now()))
-        logging.info('Failded query: {}'.format(sql))
         logging.info("{}: {}".format(datetime.now(), e))
         raise e
