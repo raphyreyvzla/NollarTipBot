@@ -242,11 +242,11 @@ def telegram_event(path):
             else:
                 logging.info("request: {}".format(request_json))
 
-        return 'ok'
     except Exception as e:
         logging.info("request: {}".format(request_json))
         logging.error('Fatal error: {}'.format(e))
-
+    finally:
+        return 'ok'
 
 if __name__ == "__main__":
     app.run()
