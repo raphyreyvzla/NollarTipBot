@@ -104,7 +104,7 @@ def send_tip(message, users_to_tip, tip_index):
         datetime.now(), users_to_tip[tip_index]['receiver_screen_name']))
     if str(users_to_tip[tip_index]['receiver_id']) == str(
             message['sender_id']):
-        self_tip_text = "Self tipping is not allowed.  Please use this bot to spread the $NANO to other users!"
+        self_tip_text = "Self tipping is not allowed.  Please use this bot to spread the NOS to other users!"
         social.send_reply(message, self_tip_text)
 
         logging.info("{}: User tried to tip themself").format(datetime.now())
@@ -187,7 +187,7 @@ def send_tip(message, users_to_tip, tip_index):
         receiver_tip_text = (
             "@{} just sent you a {} NOS tip! Reply to this DM with !balance to see your new balance.  If you have not "
             "registered an account, send a reply with !register to get started, or !help to see a list of "
-            "commands! Learn more about NOS(XNOS) & Nollar at https://nos.cash/"
+            "commands! Learn more about NOS (XNOS) & Nollar at https://nos.cash/"
             .format(message['sender_screen_name'], message['tip_amount_text'],
                     users_to_tip[tip_index]['balance']))
         social.send_dm(users_to_tip[tip_index]['receiver_id'],

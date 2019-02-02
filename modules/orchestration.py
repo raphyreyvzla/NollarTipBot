@@ -69,8 +69,8 @@ def parse_action(message):
         if new_pid == 0:
             try:
                 redirect_tip_text = (
-                    "Tips are processed through public messages now.  Please send in the format "
-                    "@NosTipBot !tip .0001 @user1.")
+                    "Tips are processed through public messages now.  Please send this message in group chat in the format "
+                    "@NosTipBot !tip 1 @user1.")
                 social.send_dm(message['sender_id'], redirect_tip_text)
             except Exception as e:
                 logging.info("Exception: {}".format(e))

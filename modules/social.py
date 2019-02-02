@@ -146,8 +146,8 @@ def set_tip_list(message, users_to_tip):
                     missing_user_message = (
                         "{} not found in our records.  In order to tip them, they need to be a "
                         "member of the channel.  If they are in the channel, please have them "
-                        "send a message in the chat so I can add them.".format(
-                            message['text'][t_index]))
+                        "send a message in the chat so I can add them. They also need to have Telegram username set up."
+                        .format(message['text'][t_index]))
                     send_reply(message, missing_user_message)
                     users_to_tip.clear()
                     return message, users_to_tip
