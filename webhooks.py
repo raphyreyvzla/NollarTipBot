@@ -245,7 +245,7 @@ def telegram_event(path):
         return 'ok'
     except Exception as e:
         logging.info("request: {}".format(request_json))
-        log.error('Fatal error: {}'.format(e))
+        logging.error('Fatal error: {}'.format(e))
 
 
 if __name__ == "__main__":
