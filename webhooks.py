@@ -64,66 +64,41 @@ def telegram_webhook():
 @app.route('/', defaults={'path': ''}, methods=["POST"])
 @app.route('/<path:path>', methods=["POST"])
 def telegram_event(path):
-    message = {
-        # id:                     ID of the received message - Error logged through None value
-        # text:                   A list containing the text of the received message, split by ' '
-        # sender_account:         Nano account of sender - Error logged through None value
-        # sender_register:        Registration status with Tip Bot of sender account
-        # sender_balance_raw:     Amount of Nano in sender's account, stored in raw
-        # sender_balance:         Amount of Nano in sender's account, stored in Nano
+    try:
+        message = {
+            # id:                     ID of the received message - Error logged through None value
+            # text:                   A list containing the text of the received message, split by ' '
+            # sender_account:         Nano account of sender - Error logged through None value
+            # sender_register:        Registration status with Tip Bot of sender account
+            # sender_balance_raw:     Amount of Nano in sender's account, stored in raw
+            # sender_balance:         Amount of Nano in sender's account, stored in Nano
 
-        # action_index:           Location of key action value *(currently !tip only)
-        # action:                 Action found in the received message - Error logged through None value
+            # action_index:           Location of key action value *(currently !tip only)
+            # action:                 Action found in the received message - Error logged through None value
 
-        # starting_point:         Location of action sent via message (currently !tip only)
+            # starting_point:         Location of action sent via message (currently !tip only)
 
-        # tip_amount:             Value of tip to be sent to receiver(s) - Error logged through -1
-        # tip_amount_text:        Value of the tip stored in a string to prevent formatting issues
-        # total_tip_amount:       Equal to the tip amount * number of users to tip
-        # tip_id:                 ID of the tip, used to prevent double sending of tips.  Comprised of
-        #                         message['id'] + index of user in users_to_tip
-        # send_hash:              Hash of the send RPC transaction
-    }
+            # tip_amount:             Value of tip to be sent to receiver(s) - Error logged through -1
+            # tip_amount_text:        Value of the tip stored in a string to prevent formatting issues
+            # total_tip_amount:       Equal to the tip amount * number of users to tip
+            # tip_id:                 ID of the tip, used to prevent double sending of tips.  Comprised of
+            #                         message['id'] + index of user in users_to_tip
+            # send_hash:              Hash of the send RPC transaction
+        }
 
-    users_to_tip = [
-        # List including dictionaries for each user to send a tip.  Each index will include
-        # the below parameters
-        #    receiver_account:       Nano account of receiver
-        #    receiver_register:      Registration status with Tip Bot of receiver account
-    ]
+        users_to_tip = [
+            # List including dictionaries for each user to send a tip.  Each index will include
+            # the below parameters
+            #    receiver_account:       Nano account of receiver
+            #    receiver_register:      Registration status with Tip Bot of receiver account
+        ]
 
-    request_json = request.get_json()
-    logging.info("request_json: {}".format(request_json))
+        request_json = request.get_json()
+        logging.info("request_json: {}".format(request_json))
 
-    if 'message' in request_json.keys():
-        if request_json['message']['chat']['type'] == 'private':
-            logging.info("Direct message received in Telegram.  Processing.")
-            message['sender_id'] = request_json['message']['from']['id']
-
-            try:
-                message['sender_screen_name'] = request_json['message'][
-                    'from']['username']
-            except KeyError:
-                first_name = request_json['message']['from'].get(
-                    'first_name', '')
-                last_name = request_json['message']['from'].get(
-                    'last_name', '')
-                member_name = first_name + '_' + last_name
-                message['sender_screen_name'] = member_name
-
-            message['dm_id'] = request_json['update_id']
-            message['text'] = request_json['message']['text']
-            message['dm_array'] = message['text'].split(" ")
-            message['dm_action'] = message['dm_array'][0].lower()
-
-            logging.info("{}: action identified: {}".format(
-                datetime.now(), message['dm_action']))
-
-            parse_action(message)
-
-        elif (request_json['message']['chat']['type'] == 'supergroup'
-              or request_json['message']['chat']['type'] == 'group'):
-            if 'text' in request_json['message']:
+        if 'message' in request_json.keys():
+            if request_json['message']['chat']['type'] == 'private':
+                logging.info("Direct message received in Telegram.  Processing.")
                 message['sender_id'] = request_json['message']['from']['id']
 
                 try:
@@ -137,111 +112,140 @@ def telegram_event(path):
                     member_name = first_name + '_' + last_name
                     message['sender_screen_name'] = member_name
 
-                message['id'] = request_json['message']['message_id']
-                message['chat_id'] = request_json['message']['chat']['id']
-                message['chat_name'] = request_json['message']['chat']['title']
-
-                check_telegram_member(message['chat_id'], message['chat_name'],
-                                      message['sender_id'],
-                                      message['sender_screen_name'])
-
+                message['dm_id'] = request_json['update_id']
                 message['text'] = request_json['message']['text']
-                message['text'] = message['text'].replace('\n', ' ')
-                message['text'] = message['text'].lower()
-                message['text'] = message['text'].split(' ')
+                message['dm_array'] = message['text'].split(" ")
+                message['dm_action'] = message['dm_array'][0].lower()
 
-                message = check_message_action(message)
-                if message['action'] is None:
-                    logging.info(
-                        "{}: Mention of nano tip bot without a !tip command.".
-                        format(datetime.now()))
-                    return '', HTTPStatus.OK
+                logging.info("{}: action identified: {}".format(
+                    datetime.now(), message['dm_action']))
 
-                message = validate_tip_amount(message)
-                if message['tip_amount'] <= 0:
-                    return '', HTTPStatus.OK
+                parse_action(message)
 
-                if message['action'] != -1 and str(
-                        message['sender_id']) != str(BOT_ID_TELEGRAM):
-                    new_pid = os.fork()
-                    if new_pid == 0:
-                        try:
-                            tip_process(message, users_to_tip)
-                        except Exception as e:
-                            logging.info("Exception: {}".format(e))
-                            raise e
+            elif (request_json['message']['chat']['type'] == 'supergroup'
+                or request_json['message']['chat']['type'] == 'group'):
+                if 'text' in request_json['message']:
+                    message['sender_id'] = request_json['message']['from']['id']
 
-                        os._exit(0)
-                    else:
+                    try:
+                        message['sender_screen_name'] = request_json['message'][
+                            'from']['username']
+                    except KeyError:
+                        first_name = request_json['message']['from'].get(
+                            'first_name', '')
+                        last_name = request_json['message']['from'].get(
+                            'last_name', '')
+                        member_name = first_name + '_' + last_name
+                        message['sender_screen_name'] = member_name
+
+                    message['id'] = request_json['message']['message_id']
+                    message['chat_id'] = request_json['message']['chat']['id']
+                    message['chat_name'] = request_json['message']['chat']['title']
+
+                    check_telegram_member(message['chat_id'], message['chat_name'],
+                                        message['sender_id'],
+                                        message['sender_screen_name'])
+
+                    message['text'] = request_json['message']['text']
+                    message['text'] = message['text'].replace('\n', ' ')
+                    message['text'] = message['text'].lower()
+                    message['text'] = message['text'].split(' ')
+
+                    message = check_message_action(message)
+                    if message['action'] is None:
+                        logging.info(
+                            "{}: Mention of nano tip bot without a !tip command.".
+                            format(datetime.now()))
                         return '', HTTPStatus.OK
 
-            elif 'new_chat_member' in request_json['message']:
-                logging.info("new member joined chat, adding to DB")
-                chat_id = request_json['message']['chat']['id']
-                chat_name = request_json['message']['chat']['title']
-                member_id = request_json['message']['new_chat_member']['id']
-                member_name = request_json['message']['new_chat_member'].get(
-                    'username')
-                if not member_name:
-                    first_name = request_json['message'][
-                        'new_chat_member'].get('first_name', '')
-                    last_name = request_json['message']['new_chat_member'].get(
-                        'last_name', '')
-                    member_name = first_name + '_' + last_name
+                    message = validate_tip_amount(message)
+                    if message['tip_amount'] <= 0:
+                        return '', HTTPStatus.OK
 
-                new_chat_member_call = (
-                    "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
-                    "VALUES ({}, '{}', {}, '{}')".format(
-                        chat_id, chat_name, member_id, member_name))
-                set_db_data(new_chat_member_call)
+                    if message['action'] != -1 and str(
+                            message['sender_id']) != str(BOT_ID_TELEGRAM):
+                        new_pid = os.fork()
+                        if new_pid == 0:
+                            try:
+                                tip_process(message, users_to_tip)
+                            except Exception as e:
+                                logging.info("Exception: {}".format(e))
+                                raise e
 
-            elif 'left_chat_member' in request_json['message']:
-                chat_id = request_json['message']['chat']['id']
-                chat_name = request_json['message']['chat']['title']
-                member_id = request_json['message']['left_chat_member']['id']
-                member_name = request_json['message']['left_chat_member'][
-                    'username']
-                if not member_name:
-                    first_name = request_json['message'][
-                        'new_chat_member'].get('first_name', '')
-                    last_name = request_json['message']['new_chat_member'].get(
-                        'last_name', '')
-                    member_name = first_name + '_' + last_name
-                logging.info(
-                    "member {}-{} left chat {}-{}, removing from DB.".format(
-                        member_id, member_name, chat_id, chat_name))
+                            os._exit(0)
+                        else:
+                            return '', HTTPStatus.OK
 
-                remove_member_call = (
-                    "DELETE FROM telegram_chat_members "
-                    "WHERE chat_id = {} AND member_id = {}".format(
-                        chat_id, member_id))
-                set_db_data(remove_member_call)
+                elif 'new_chat_member' in request_json['message']:
+                    logging.info("new member joined chat, adding to DB")
+                    chat_id = request_json['message']['chat']['id']
+                    chat_name = request_json['message']['chat']['title']
+                    member_id = request_json['message']['new_chat_member']['id']
+                    member_name = request_json['message']['new_chat_member'].get(
+                        'username')
+                    if not member_name:
+                        first_name = request_json['message'][
+                            'new_chat_member'].get('first_name', '')
+                        last_name = request_json['message']['new_chat_member'].get(
+                            'last_name', '')
+                        member_name = first_name + '_' + last_name
 
-            elif 'group_chat_created' in request_json['message']:
-                chat_id = request_json['message']['chat']['id']
-                chat_name = request_json['message']['chat']['title']
-                member_id = request_json['message']['from']['id']
-                member_name = request_json['message']['from']['username']
-                if not member_name:
-                    first_name = request_json['message'][
-                        'new_chat_member'].get('first_name', '')
-                    last_name = request_json['message']['new_chat_member'].get(
-                        'last_name', '')
-                    member_name = first_name + '_' + last_name
-                logging.info(
-                    "member {} created chat {}, inserting creator into DB.".
-                    format(member_name, chat_name))
+                    new_chat_member_call = (
+                        "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
+                        "VALUES ({}, '{}', {}, '{}')".format(
+                            chat_id, chat_name, member_id, member_name))
+                    set_db_data(new_chat_member_call)
 
-                new_chat_call = (
-                    "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
-                    "VALUES ({}, '{}', {}, '{}')".format(
-                        chat_id, chat_name, member_id, member_name))
-                set_db_data(new_chat_call)
+                elif 'left_chat_member' in request_json['message']:
+                    chat_id = request_json['message']['chat']['id']
+                    chat_name = request_json['message']['chat']['title']
+                    member_id = request_json['message']['left_chat_member']['id']
+                    member_name = request_json['message']['left_chat_member'][
+                        'username']
+                    if not member_name:
+                        first_name = request_json['message'][
+                            'new_chat_member'].get('first_name', '')
+                        last_name = request_json['message']['new_chat_member'].get(
+                            'last_name', '')
+                        member_name = first_name + '_' + last_name
+                    logging.info(
+                        "member {}-{} left chat {}-{}, removing from DB.".format(
+                            member_id, member_name, chat_id, chat_name))
 
-        else:
-            logging.info("request: {}".format(request_json))
+                    remove_member_call = (
+                        "DELETE FROM telegram_chat_members "
+                        "WHERE chat_id = {} AND member_id = {}".format(
+                            chat_id, member_id))
+                    set_db_data(remove_member_call)
 
-    return 'ok'
+                elif 'group_chat_created' in request_json['message']:
+                    chat_id = request_json['message']['chat']['id']
+                    chat_name = request_json['message']['chat']['title']
+                    member_id = request_json['message']['from']['id']
+                    member_name = request_json['message']['from']['username']
+                    if not member_name:
+                        first_name = request_json['message'][
+                            'new_chat_member'].get('first_name', '')
+                        last_name = request_json['message']['new_chat_member'].get(
+                            'last_name', '')
+                        member_name = first_name + '_' + last_name
+                    logging.info(
+                        "member {} created chat {}, inserting creator into DB.".
+                        format(member_name, chat_name))
+
+                    new_chat_call = (
+                        "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
+                        "VALUES ({}, '{}', {}, '{}')".format(
+                            chat_id, chat_name, member_id, member_name))
+                    set_db_data(new_chat_call)
+
+            else:
+                logging.info("request: {}".format(request_json))
+
+        return 'ok'
+    except Exception as e:
+        logging.info("request: {}".format(request_json))
+        log.error('Fatal error: {}'.format(e))
 
 
 if __name__ == "__main__":
