@@ -34,21 +34,21 @@ def db_init():
     logging.info('Succesfully initiated database.')
 
 @app.cli.command('db_init_no_delete')
-def db_init():
+def db_init_no_delete():
     create_db()
     create_tables()
     logging.info('Succesfully initiated database.')
 
 
 @app.cli.command('db_create_tables')
-def db_init():
+def db_create_tables():
     create_tables()
     logging.info('Successfully created tables.')
 
 
 @app.cli.command('db_drop_table')
 @click.argument('name')
-def db_drop(name):
+def db_drop_table(name):
     drop_table(name)
 
 
@@ -121,7 +121,7 @@ def telegram_event(path):
                     datetime.now(), message['dm_action']))
 
                 parse_action(message)
-
+            
             elif (request_json['message']['chat']['type'] == 'supergroup'
                   or request_json['message']['chat']['type'] == 'group'):
                 if 'text' in request_json['message']:
