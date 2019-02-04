@@ -28,6 +28,13 @@ app = Flask(__name__)
 @app.cli.command('db_init')
 def db_init():
     delete_db()
+    logging.info('Succesfully deleted old database.')
+    create_db()
+    create_tables()
+    logging.info('Succesfully initiated database.')
+
+@app.cli.command('db_init_no_delete')
+def db_init():
     create_db()
     create_tables()
     logging.info('Succesfully initiated database.')
