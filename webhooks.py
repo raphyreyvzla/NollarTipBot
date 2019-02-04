@@ -147,8 +147,7 @@ def telegram_event(path):
                     message['text'] = message['text'].lower()
                     message['text'] = message['text'].split(' ')
 
-                    logging.info('Got message: {}'.format(message['text']))
-
+                    
                     message = check_message_action(message)
                     if message['action'] is None:
                         logging.debug(
