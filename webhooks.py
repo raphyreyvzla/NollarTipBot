@@ -33,6 +33,7 @@ def db_init():
     create_tables()
     logging.info('Succesfully initiated database.')
 
+
 @app.cli.command('db_init_no_delete')
 def db_init_no_delete():
     create_db()
@@ -110,18 +111,19 @@ def telegram_event(path):
                 message['sender_id'] = request_json['message']['from']['id']
 
                 message['sender_screen_name'] = request_json['message'][
-                        'from']['username']
+                    'from']['username']
 
                 message['dm_id'] = request_json['update_id']
                 message['text'] = request_json['message']['text']
                 message['dm_array'] = message['text'].split(" ")
-                message['dm_action'] = message['dm_array'][0].lower() # TODO: use regex!
+                message['dm_action'] = message['dm_array'][0].lower(
+                )  # TODO: use regex!
 
                 logging.info("{}: action identified: {}".format(
                     datetime.now(), message['dm_action']))
 
                 parse_action(message)
-            
+
             elif (request_json['message']['chat']['type'] == 'supergroup'
                   or request_json['message']['chat']['type'] == 'group'):
                 if 'text' in request_json['message']:
@@ -144,6 +146,8 @@ def telegram_event(path):
                     message['text'] = message['text'].replace('\n', ' ')
                     message['text'] = message['text'].lower()
                     message['text'] = message['text'].split(' ')
+
+                    logging.info('Got message: {}'.format(message['text']))
 
                     message = check_message_action(message)
                     if message['action'] is None:
@@ -228,6 +232,7 @@ def telegram_event(path):
     finally:
         logging.info("In finally: request: {}".format(request_json))
         return 'ok'
+
 
 if __name__ == "__main__":
     app.run()
