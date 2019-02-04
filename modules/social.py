@@ -79,12 +79,12 @@ def validate_tip_amount(message):
 
     if Decimal(message['tip_amount']) < Decimal(MIN_TIP):
         min_tip_text = (
-            "The minimum tip amount is {} Nos.  Please update your tip amount and try again."
+            "The minimum tip amount is {} NOLLAR.  Please update your tip amount and try again."
             .format(MIN_TIP))
         send_reply(message, min_tip_text)
 
         message['tip_amount'] = -1
-        logging.info("{}: User tipped less than {} Nos.".format(
+        logging.info("{}: User tipped less than {} NOLLAR.".format(
             datetime.now(), MIN_TIP))
         return message
 
@@ -206,7 +206,7 @@ def validate_total_tip_amount(message):
     if message['sender_balance_raw']['balance'] < (
             message['total_tip_amount'] * raw_denominator):
         not_enough_text = (
-            "You do not have enough Nos to cover this {} Nos tip.  Please check your balance by "
+            "You do not have enough NOLLAR to cover this {} NOLLAR tip.  Please check your balance by "
             "sending a DM to me with !balance and retry.".format(
                 message['total_tip_amount']))
         send_reply(message, not_enough_text)
