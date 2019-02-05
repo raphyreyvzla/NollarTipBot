@@ -212,7 +212,7 @@ def validate_total_tip_amount(message):
         not_enough_text = (
             "You do not have enough NOLLAR to cover this {} NOLLAR tip.  Please check your balance by "
             "sending a DM to me with !balance and retry.".format(
-                Decimal(message['total_tip_amount'])))
+                Decimal(message['total_tip_amount']) / Decimal("1")))
         send_reply(message, not_enough_text)
 
         logging.info(

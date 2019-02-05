@@ -424,10 +424,10 @@ def tip_process(message, users_to_tip):
     if len(users_to_tip) >= 2:
         multi_tip_success = (
             "You have successfully sent your {} NOLLAR tips.".format(
-                Decimal(message['tip_amount_text'])))
+                Decimal(message['tip_amount_text']) / Decimal("1")))
         social.send_reply(message, multi_tip_success)
 
     elif len(users_to_tip) == 1:
         tip_success = ("You have successfully sent your {} NOLLAR tip.".format(
-            Decimal(message['tip_amount_text'])))
+            Decimal(message['tip_amount_text']) / Decimal("1")))
         social.send_reply(message, tip_success)
