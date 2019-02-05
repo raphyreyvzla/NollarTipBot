@@ -71,6 +71,7 @@ def validate_tip_amount(message):
     try:
         message['tip_amount'] = Decimal(
             message['text'][message['starting_point']])
+        message['tip_amount'] = round(message['tip_amount'], 2)
     except Exception:
         logging.info("{}: Tip amount was not a number: {}".format(
             datetime.now(), message['text'][message['starting_point']]))
@@ -207,6 +208,7 @@ def validate_total_tip_amount(message):
     Validate that the sender has enough Nano to cover the tip to all users
     """
     logging.info("{}: validating total tip amount".format(datetime.now()))
+    message['total_tip_amount'] = round(message['total_tip_amount'], 2)
     if message['sender_balance_raw']['balance'] < (
             message['total_tip_amount'] * raw_denominator):
         not_enough_text = (

@@ -13,6 +13,7 @@ from . import currency, db, social
 config = configparser.ConfigParser()
 config.read(os.environ['MY_CONF_DIR'] + '/webhooks.ini')
 logging.basicConfig(handlers=[logging.StreamHandler()], level=logging.INFO)
+
 # Set constants
 BULLET = u"\u2022"
 NODE_IP = config.get('webhooks', 'node_ip')
@@ -322,7 +323,7 @@ def withdraw_process(message):
                     "resend your request.")
                 social.send_dm(message['sender_id'], invalid_account_text)
                 logging.info(
-                    "{}: The xrb account number is invalid: {}".format(
+                    "{}: The nollar account number is invalid: {}".format(
                         datetime.now(), receiver_account))
 
             elif balance_return['balance'] == 0:
@@ -424,10 +425,10 @@ def tip_process(message, users_to_tip):
     if len(users_to_tip) >= 2:
         multi_tip_success = (
             "You have successfully sent your {} NOLLAR tips.".format(
-                Decimal(message['tip_amount_text']) / Decimal("1")))
+                Decimal(message['tip_amount_text'])))
         social.send_reply(message, multi_tip_success)
 
     elif len(users_to_tip) == 1:
         tip_success = ("You have successfully sent your {} NOLLAR tip.".format(
-            Decimal(message['tip_amount_text']) / Decimal("1")))
+            Decimal(message['tip_amount_text'])))
         social.send_reply(message, tip_success)

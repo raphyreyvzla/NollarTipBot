@@ -187,7 +187,7 @@ def send_tip(message, users_to_tip, tip_index):
         receiver_tip_text = (
             "@{} just sent you a {} NOLLAR tip! Reply to this DM with !balance to see your new balance.  If you have not "
             "registered an account, send a reply with !register to get started, or !help to see a list of "
-            "commands! Learn more about NOS (XNOS) & Nollar at https://.cash/"
+            "commands! Learn more about NOS (XNOS) & Nollar at https://nos.cash/"
             .format(message['sender_screen_name'], message['tip_amount_text'],
                     users_to_tip[tip_index]['balance']))
         social.send_dm(users_to_tip[tip_index]['receiver_id'],
