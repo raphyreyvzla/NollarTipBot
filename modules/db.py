@@ -16,6 +16,7 @@ DB_USER = config.get('webhooks', 'user')
 DB_PW = config.get('webhooks', 'password')
 DB_SCHEMA = config.get('webhooks', 'schema')
 DB_PORT = int(config.get('webhooks', 'port'))
+getcontext().prec = 3
 
 
 def check_db_exist():

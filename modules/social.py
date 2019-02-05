@@ -2,7 +2,7 @@ import configparser
 import logging
 import os
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, getcontext
 
 import nano
 import pyqrcode
@@ -28,6 +28,7 @@ telegram_bot = telegram.Bot(token=TELEGRAM_KEY)
 # Connect to node
 rpc = nano.rpc.Client(NODE_IP)
 raw_denominator = 10**2
+getcontext().prec = 3
 
 
 def send_dm(receiver, message):

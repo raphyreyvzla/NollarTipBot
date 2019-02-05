@@ -2,7 +2,7 @@ import configparser
 import logging
 import os
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, getcontext
 from http import HTTPStatus
 
 import nano
@@ -22,6 +22,7 @@ MIN_TIP = config.get('webhooks', 'min_tip')
 # Connect to global functions
 rpc = nano.rpc.Client(NODE_IP)
 raw_denominator = 10**2
+getcontext().prec = 3
 
 
 def parse_action(message):
