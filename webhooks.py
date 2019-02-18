@@ -1,12 +1,13 @@
 import os
+import re
 from http import HTTPStatus
-import click
 
+import click
 from flask import Flask, render_template, request
 
+from modules.db import *
 from modules.orchestration import *
 from modules.social import *
-from modules.db import *
 
 # Read config and parse constants
 config = configparser.ConfigParser()
@@ -135,7 +136,8 @@ def telegram_event(path):
 
                     message['id'] = request_json['message']['message_id']
                     message['chat_id'] = request_json['message']['chat']['id']
-                    chat_name = re.sub('\W+', ' ', request_json['message']['chat']['title'])
+                    chat_name = re.sub(
+                        '\W+', ' ', request_json['message']['chat']['title'])
                     message['chat_name'] = chat_name
                     check_telegram_member(
                         message['chat_id'], message['chat_name'],
@@ -145,7 +147,6 @@ def telegram_event(path):
                     message['text'] = message['text'].replace('\n', ' ')
                     message['text'] = message['text'].lower()
                     message['text'] = message['text'].split(' ')
-
 
                     message = check_message_action(message)
                     if message['action'] is None:
