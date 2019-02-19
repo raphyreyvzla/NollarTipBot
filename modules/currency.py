@@ -111,22 +111,19 @@ def send_tip(message, users_to_tip, tip_index):
         return
 
     # Check if the receiver has an account
-    receiver_account_get = (
-        "SELECT account FROM users where user_id = {}".format(
-            int(users_to_tip[tip_index]['receiver_id'])))
-    receiver_account_data = db.get_db_data(receiver_account_get)
+    receiver_account_get = "SELECT account FROM users where user_id = %s"
+    arguments = (int(users_to_tip[tip_index]['receiver_id']))
+    receiver_account_data = db.get_db_data(receiver_account_get, arguments)
 
     # If they don't, create an account for them
     if not receiver_account_data:
         users_to_tip[tip_index]['receiver_account'] = rpc.account_create(
             wallet="{}".format(WALLET), work=True)
-        create_receiver_account = (
-            "INSERT INTO users (user_id, user_name, account, register) "
-            "VALUES({}, '{}', '{}',0)".format(
-                users_to_tip[tip_index]['receiver_id'],
-                users_to_tip[tip_index]['receiver_screen_name'],
-                users_to_tip[tip_index]['receiver_account']))
-        db.set_db_data(create_receiver_account)
+        create_receiver_account = "INSERT INTO users (user_id, user_name, account, register) VALUES(%s, %s, %s, 0)"
+        arguments = (users_to_tip[tip_index]['receiver_id'],
+                     users_to_tip[tip_index]['receiver_screen_name'],
+                     users_to_tip[tip_index]['receiver_account'])
+        db.set_db_data(create_receiver_account, arguments)
         logging.info(
             "{}: Sender sent to a new receiving account.  Created  account {}".
             format(datetime.now(),

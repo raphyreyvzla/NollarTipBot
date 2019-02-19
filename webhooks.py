@@ -182,11 +182,9 @@ def telegram_event(path):
                     member_name = request_json['message']['new_chat_member'][
                         'username']
 
-                    new_chat_member_call = (
-                        "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
-                        "VALUES ({}, '{}', {}, '{}')".format(
-                            chat_id, chat_name, member_id, member_name))
-                    set_db_data(new_chat_member_call)
+                    new_chat_member_call = "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) VALUES (%s, %s, %s, %s)"
+                    arguments = (chat_id, chat_name, member_id, member_name)
+                    set_db_data(new_chat_member_call, arguments)
 
                 elif 'left_chat_member' in request_json['message']:
                     chat_id = request_json['message']['chat']['id']
@@ -200,11 +198,9 @@ def telegram_event(path):
                         "member {}-{} left chat {}-{}, removing from DB.".
                         format(member_id, member_name, chat_id, chat_name))
 
-                    remove_member_call = (
-                        "DELETE FROM telegram_chat_members "
-                        "WHERE chat_id = {} AND member_id = {}".format(
-                            chat_id, member_id))
-                    set_db_data(remove_member_call)
+                    remove_member_call = "DELETE FROM telegram_chat_members WHERE chat_id = %s AND member_id = %s"
+                    argunents = (chat_id, member_id)
+                    set_db_data(remove_member_call, arguments)
 
                 elif 'group_chat_created' in request_json['message']:
                     chat_id = request_json['message']['chat']['id']
@@ -216,11 +212,9 @@ def telegram_event(path):
                         "member {} created chat {}, inserting creator into DB."
                         .format(member_name, chat_name))
 
-                    new_chat_call = (
-                        "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
-                        "VALUES ({}, '{}', {}, '{}')".format(
-                            chat_id, chat_name, member_id, member_name))
-                    set_db_data(new_chat_call)
+                    new_chat_call = "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) VALUES (%s, %s, %s, %s)"
+                    arguments = (chat_id, chat_name, member_id, member_name)
+                    set_db_data(new_chat_call, arguments)
 
             else:
                 logging.info("In try: request: {}".format(request_json))

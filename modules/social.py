@@ -126,12 +126,10 @@ def set_tip_list(message, users_to_tip):
             if str(message['text'][t_index][0]) == "@" and str(
                     message['text'][t_index]).lower() != (
                         "@" + str(message['sender_screen_name']).lower()):
-                check_user_call = (
-                    "SELECT member_id, member_name FROM telegram_chat_members "
-                    "WHERE chat_id = {} and member_name = '{}'".format(
-                        message['chat_id'], message['text'][t_index][1:]))
+                check_user_call = "SELECT member_id, member_name FROM telegram_chat_members WHERE chat_id = %s and member_name = %s"
+                arguments = (message['chat_id'], message['text'][t_index][1:])
 
-                user_check_data = db.get_db_data(check_user_call)
+                user_check_data = db.get_db_data(check_user_call, arguments)
                 if user_check_data:
                     receiver_id = user_check_data[0][0]
                     receiver_screen_name = user_check_data[0][1]
@@ -171,9 +169,9 @@ def validate_sender(message):
     """
     logging.info("{}: validating sender".format(datetime.now()))
     logging.info("sender id: {}".format(message['sender_id']))
-    db_call = "SELECT account, register FROM users where user_id = {}".format(
-        message['sender_id'])
-    sender_account_info = db.get_db_data(db_call)
+    db_call = "SELECT account, register FROM users where user_id = %s"
+    arguments = (message['sender_id'])
+    sender_account_info = db.get_db_data(db_call, arguments)
 
     if not sender_account_info:
         no_account_text = (
@@ -190,9 +188,9 @@ def validate_sender(message):
     message['sender_register'] = sender_account_info[0][1]
 
     if message['sender_register'] != 1:
-        db_call = "UPDATE users SET register = 1 WHERE user_id = {}".format(
-            message['sender_id'])
-        db.set_db_data(db_call)
+        db_call = "UPDATE users SET register = 1 WHERE user_id = %s"
+        arguments = (message['sender_id'])
+        db.set_db_data(db_call, arguments)
 
     currency.receive_pending(message['sender_account'])
     message['sender_balance_raw'] = rpc.account_balance(
@@ -231,21 +229,17 @@ def send_reply(message, text):
 
 
 def check_telegram_member(chat_id, chat_name, member_id, member_name):
-    check_user_call = (
-        "SELECT member_id, member_name FROM telegram_chat_members "
-        "WHERE chat_id = {} and member_name = '{}'".format(
-            chat_id, member_name))
-    user_check_data = db.get_db_data(check_user_call)
+    check_user_call = "SELECT member_id, member_name FROM telegram_chat_members WHERE chat_id = %s and member_name = %s"
+    arguments = (chat_id, member_name)
+    user_check_data = db.get_db_data(check_user_call, arguments)
 
     logging.info("checking if user exists")
     if not user_check_data:
         logging.info("{}: User {}-{} not found in DB, inserting".format(
             datetime.now(), chat_id, member_name))
-        new_chat_member_call = (
-            "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) "
-            "VALUES ({}, '{}', {}, '{}')".format(chat_id, chat_name, member_id,
-                                                 member_name))
-        db.set_db_data(new_chat_member_call)
+        new_chat_member_call = "INSERT INTO telegram_chat_members (chat_id, chat_name, member_id, member_name) VALUES (%s, %s, %s, %s)"
+        arguments = (chat_id, chat_name, member_id, member_name)
+        db.set_db_data(new_chat_member_call, arguments)
 
     return
 

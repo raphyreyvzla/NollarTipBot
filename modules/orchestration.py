@@ -154,10 +154,9 @@ def balance_process(message):
     When the user sends a DM containing !balance, reply with the balance of the account linked with their Twitter ID
     """
     logging.info("{}: In balance process".format(datetime.now()))
-    balance_call = (
-        "SELECT account, register FROM users WHERE user_id = {} ".format(
-            message['sender_id']))
-    data = db.get_db_data(balance_call)
+    balance_call = "SELECT account, register FROM users WHERE user_id = %s"
+    arguments = (message['sender_id'])
+    data = db.get_db_data(balance_call, arguments)
     if not data:
         logging.info(
             "{}: User tried to check balance without an account".format(
@@ -171,10 +170,9 @@ def balance_process(message):
         sender_register = data[0][1]
 
         if sender_register == 0:
-            set_register_call = (
-                "UPDATE users SET register = 1 WHERE user_id = {} AND register = 0"
-                .format(message['sender_id']))
-            db.set_db_data(set_register_call)
+            set_register_call = "UPDATE users SET register = 1 WHERE user_id = %s AND register = 0"
+            arguments = (message['sender_id'])
+            db.set_db_data(set_register_call, arguments)
 
         currency.receive_pending(message['sender_account'])
         balance_return = rpc.account_balance(
@@ -194,21 +192,18 @@ def register_process(message):
     reply with their account number.
     """
     logging.info("{}: In register process.".format(datetime.now()))
-    register_call = (
-        "SELECT account, register FROM users WHERE user_id = {}".format(
-            message['sender_id']))
-    data = db.get_db_data(register_call)
+    register_call = "SELECT account, register FROM users WHERE user_id = %s"
+    arguments = (message['sender_id'])
+    data = db.get_db_data(register_call, arguments)
 
     if not data:
         # Create an account for the user
         sender_account = rpc.account_create(
             wallet="{}".format(WALLET), work=False)
-        account_create_call = (
-            "INSERT INTO users (user_id, user_name, account, register) "
-            "VALUES({}, '{}', '{}',1)".format(message['sender_id'],
-                                              message['sender_screen_name'],
-                                              sender_account))
-        db.set_db_data(account_create_call)
+        account_create_call = "INSERT INTO users (user_id, user_name, account, register) VALUES(%s, %s, %s, 1)"
+        arguments = (message['sender_id'], message['sender_screen_name'],
+                     sender_account)
+        db.set_db_data(account_create_call, arguments)
         account_text = "You have successfully registered for an account.  Your account number is:"
         social.send_account_message(account_text, message, sender_account)
 
@@ -217,10 +212,9 @@ def register_process(message):
     elif data[0][1] == 0:
         # The user has an account, but needed to register, so send a message to the user with their account
         sender_account = data[0][0]
-        account_registration_update = (
-            "UPDATE users SET register = 1 WHERE user_id = {} AND "
-            "register = 0".format(message['sender_id']))
-        db.set_db_data(account_registration_update)
+        account_registration_update = "UPDATE users SET register = 1 WHERE user_id = %s AND register = 0"
+        arguments = (message['sender_id'])
+        db.set_db_data(account_registration_update, arguments)
 
         account_registration_text = "You have successfully registered for an account.  Your account number is:"
         social.send_account_message(account_registration_text, message,
@@ -249,18 +243,15 @@ def account_process(message):
     """
 
     logging.info("{}: In account process.".format(datetime.now()))
-    sender_account_call = (
-        "SELECT account, register FROM users WHERE user_id = {}".format(
-            message['sender_id']))
-    account_data = db.get_db_data(sender_account_call)
+    sender_account_call = "SELECT account, register FROM users WHERE user_id = %s"
+    arguments = (message['sender_id'])
+    account_data = db.get_db_data(sender_account_call, arguments)
     if not account_data:
         sender_account = rpc.account_create(
             wallet="{}".format(WALLET), work=True)
-        account_create_call = (
-            "INSERT INTO users (user_id, user_name, account, register) "
-            "VALUES({}, '{}', '{}',1)".format(message['sender_id'],
-                                              message['sender_screen_name'],
-                                              sender_account))
+        account_create_call = "INSERT INTO users (user_id, user_name, account, register) VALUES(%s, %s, %s, 1)"
+        arguments = (message['sender_id'], message['sender_screen_name'],
+                     sender_account)
         db.set_db_data(account_create_call)
 
         account_text = "You didn't have an account set up, so I set one up for you.  Your account number is:"
@@ -274,10 +265,9 @@ def account_process(message):
         sender_register = account_data[0][1]
 
         if sender_register == 0:
-            set_register_call = (
-                "UPDATE users SET register = 1 WHERE user_id = {} AND register = 0"
-                .format(message['sender_id']))
-            db.set_db_data(set_register_call)
+            set_register_call = "UPDATE users SET register = 1 WHERE user_id = %s AND register = 0"
+            arguments = (message['sender_id'])
+            db.set_db_data(set_register_call, arguments)
 
         account_text = "Your account number is:"
         social.send_account_message(account_text, message, sender_account)
@@ -295,10 +285,9 @@ def withdraw_process(message):
     # check if there is a 2nd argument
     if 3 >= len(message['dm_array']) >= 2:
         # if there is, retrieve the sender's account and wallet
-        withdraw_account_call = (
-            "SELECT account FROM users WHERE user_id = {}".format(
-                message['sender_id']))
-        withdraw_data = db.get_db_data(withdraw_account_call)
+        withdraw_account_call = "SELECT account FROM users WHERE user_id = %s"
+        arguments = (message['sender_id'])
+        withdraw_data = db.get_db_data(withdraw_account_call, arguments)
 
         if not withdraw_data:
             withdraw_no_account_text = "You do not have an account.  Respond with !register to set one up."
