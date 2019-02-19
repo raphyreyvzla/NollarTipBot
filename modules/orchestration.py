@@ -7,7 +7,7 @@ from http import HTTPStatus
 
 import nano
 
-from . import currency, db, social
+from . import currency, db, social, wallet_sweep
 
 # Read config and parse constants
 config = configparser.ConfigParser()
@@ -27,7 +27,19 @@ getcontext().prec = 3
 
 
 def parse_action(message):
-    if message['dm_action'] == '!help' or message[
+    if message['dm_action'] == 'telegram_sweep':
+        new_pid = os.fork()
+        if new_pid == 0:
+            try:
+                sweep_process(message)
+            except Exception as e:
+                logging.info("Exception: {}".format(e))
+                raise e
+            os._exit(0)
+        else:
+            return '', HTTPStatus.OK
+
+    elif message['dm_action'] == '!help' or message[
             'dm_action'] == '/help' or message['dm_action'] == '/start':
         new_pid = os.fork()
         if new_pid == 0:
@@ -432,3 +444,12 @@ def tip_process(message, users_to_tip):
         tip_success = ("You have successfully sent your {} NOLLAR tip.".format(
             Decimal(message['tip_amount_text'])))
         social.send_reply(message, tip_success)
+
+def sweep_process(message):
+    photos = message['photo_data']
+    response = wallet_sweep.process(photos)
+    sweep_succes = ("You have successfully received {} NOLLAR".format(Decimal(response)))
+    social.send_reply(message, sweep_succes)
+
+def create_image_process(message):
+    pass

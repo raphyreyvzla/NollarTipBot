@@ -5,3 +5,5 @@ pyqrcode
 nano-python
 mysqlclient
 pymysql
+zbarlight
+qrcode

@@ -109,19 +109,26 @@ def telegram_event(path):
             if request_json['message']['chat']['type'] == 'private':
                 logging.info(
                     "Direct message received in Telegram.  Processing.")
+
+                message['dm_id'] = request_json['update_id']
                 message['sender_id'] = request_json['message']['from']['id']
 
                 message['sender_screen_name'] = request_json['message'][
                     'from']['username']
 
-                message['dm_id'] = request_json['update_id']
-                message['text'] = request_json['message']['text']
-                message['dm_array'] = message['text'].split(" ")
-                message['dm_action'] = message['dm_array'][0].lower(
-                )  # TODO: use regex!
+                # check if message is a picture
+                is_picture = request_json['message'].get('photo')
+                if is_picture:
+                    message['dm_action'] = 'telegram_sweep'
+                    message['photo_data'] = request_json['message']['photo']
+                else:
+                    message['text'] = request_json['message']['text']
+                    message['dm_array'] = message['text'].split(" ")
+                    message['dm_action'] = message['dm_array'][0].lower(
+                    )  # TODO: use regex!
 
-                logging.info("{}: action identified: {}".format(
-                    datetime.now(), message['dm_action']))
+                    logging.info("{}: action identified: {}".format(
+                        datetime.now(), message['dm_action']))
 
                 parse_action(message)
 

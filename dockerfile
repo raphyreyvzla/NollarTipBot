@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 
-RUN apt-get -y update && apt-get install -y apt-utils apache2 apache2-utils libapache2-mod-wsgi-py3 python3 python3-dev python3-pip libmysqlclient-dev
+RUN apt-get -y update && apt-get install -y apt-utils apache2 apache2-utils libapache2-mod-wsgi-py3 python3 python3-dev python3-pip libmysqlclient-dev libzbar0 libzbar-dev
 
 RUN ln /usr/bin/python3 /usr/bin/python
 RUN ln /usr/bin/pip3 /usr/bin/pip
